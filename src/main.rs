@@ -19,6 +19,18 @@ enum Card {
     Other,
 }
 
+impl Card {
+    fn penalty(&self) -> usize {
+        match self {
+            Card::Ace => 4,
+            Card::King => 3,
+            Card::Queen => 2,
+            Card::Jack => 1,
+            Card::Other => 0,
+        }
+    }
+}
+
 fn static_deck() -> [Card; 52] {
     let mut deck: [Card; 52] = [Card::Other; 52];
 
@@ -44,18 +56,13 @@ enum Player {
     P2,
 }
 
+#[derive(Clone)]
 struct Game {
     p1: Vec<Card>,
     p2: Vec<Card>,
     middle: Vec<Card>,
     current_player: Player,
-    won: Option<Player>,
     penalty: usize,
-}
-
-struct GameStats {
-    tricks: usize,
-    cards_played: usize,
 }
 
 impl Game {
@@ -72,32 +79,72 @@ impl Game {
             p2: p2.to_vec(),
             middle: Vec::with_capacity(DECK_SIZE),
             current_player: Player::P1,
-            won: None,
             penalty: 0,
+        }
+    }
+
+    fn switch_player(&mut self) {
+        self.current_player = match self.current_player {
+            Player::P1 => Player::P2,
+            Player::P2 => Player::P1,
         }
     }
 
     /// Emulates a step of beggar my neighbour as a player,
     /// modifying the game state
     fn step(&mut self) {
+        if self.winner().is_some() {
+            return;
+        }
+
         let current_player_deck = match self.current_player {
             Player::P1 => &mut self.p1,
             Player::P2 => &mut self.p2,
         };
 
-        // have the player play a card
-        let card = current_player_deck.pop().unwrap();
+        // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
+        let card = current_player_deck
+            .pop()
+            .expect(format!("{:?} has no cards", self.current_player).as_str());
+
+        // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
+        if card.penalty() > 0 {
+            self.penalty = card.penalty();
+            self.middle.push(card);
+            self.switch_player();
+        }
+
+        // if the game has penalty, the player must play until the penalty is over
+        if self.penalty > 0 {
+            self.middle.push(card);
+            self.penalty -= 1;
+        } else {
+            // if the game has no penalty, the player plays a card and the other player must play
+            self.middle.push(card);
+            self.switch_player();
+        }
     }
 
-    /// Plays out a game of beggar my neighbour, returning statistics about the game
-    fn play(&self) -> GameStats {
-        let mut game = self.clone();
-
-        // TODO: implement
-        GameStats {
-            tricks: 0,
-            cards_played: 0,
+    fn winner(&self) -> Option<Player> {
+        if self.p1.is_empty() {
+            Some(Player::P2)
+        } else if self.p2.is_empty() {
+            Some(Player::P1)
+        } else {
+            None
         }
+    }
+
+    /// Plays out a game of beggar my neighbour, returning how many steps it took
+    fn play(&mut self) -> u128 {
+        let mut steps = 0;
+
+        while self.winner().is_none() {
+            self.step();
+            steps += 1;
+        }
+
+        steps
     }
 }
 
@@ -125,7 +172,12 @@ impl Debug for Game {
 }
 
 fn main() {
-    let game = Game::random();
+    let mut game = Game::random();
 
     println!("{:?}", game);
+
+    let steps = game.play();
+
+    println!("{:?}", game);
+    println!("winner: {:?}, steps: {}", game.winner(), steps);
 }
