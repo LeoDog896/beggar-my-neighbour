@@ -1,7 +1,6 @@
 //! implementation of beggar my neighbour card game
 
-use rayon::prelude::*;
-use std::{fmt::{Debug, Display}, collections::VecDeque};
+use std::{fmt::{Debug, Display}, collections::VecDeque, sync::Mutex};
 use rand::seq::SliceRandom;
 use clap::{Parser, Subcommand};
 
@@ -66,7 +65,7 @@ fn static_deck() -> [Card; 52] {
 }
 
 lazy_static! {
-    static ref STATIC_DECK: [Card; 52] = static_deck();
+    static ref STATIC_DECK: Mutex<[Card; 52]> = Mutex::new(static_deck());
 }
 
 const DECK_SIZE: usize = 52;
@@ -97,8 +96,9 @@ struct GameStats {
 
 impl Game {
     fn random() -> Game {
+        // We can just shuffle the original deck since it will be re-shuffled every time
         let mut rng = rand::thread_rng();
-        let mut deck: [Card; DECK_SIZE] = STATIC_DECK.clone();
+        let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
         deck.shuffle(&mut rng);
 
         let (p1, p2) = deck.split_at(P_SIZE);
@@ -326,7 +326,7 @@ fn detail(game: &mut Game) -> String {
     s.push_str(&format!("stringified: {game:?}\n"));
     let stats = game.play();
 
-    s.push_str("\n");
+    s.push('\n');
 
     s.push_str(&format!("winner: {winner:?}\n", winner = game.winner().unwrap()));
     s.push_str(&format!("turns: {turns}\n", turns = stats.turns));
@@ -345,7 +345,7 @@ fn main() {
             println!("{}", detail(&mut Game::from_string(&deck)));
         }
         Commands::Record => {
-            println!("{}", detail(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q")));
+            println!("{}", detail(&mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---")));
         }
         Commands::Longest => {
             let mut best_length = 0;

@@ -11,6 +11,8 @@ lazy_static = "1.4.0"
 rand = "0.8.5"
 rayon = "1.7.0"
 
+[profile.release]
+lto = true
+codegen-units = 1
 # uncomment this when doing performance testing
-# [profile.release]
 # debug = true

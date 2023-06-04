@@ -6,6 +6,12 @@ attemps in solving:
 
 The general rules of the game can be found in [wikipedia](https://en.wikipedia.org/wiki/Beggar-my-neighbour).
 
+## Running
+
+```sh
+RUSTFLAGS="-C target-cpu=native" cargo run --release -- longest
+```
+
 ## Game implementation
 
 Despite beggar my neighbour using a 52 card deck, we can represent it as 5 different distinct card types:
