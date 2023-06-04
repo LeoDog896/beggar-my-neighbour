@@ -2,7 +2,7 @@
 
 use std::{fmt::{Debug, Display}, collections::VecDeque};
 use rand::seq::SliceRandom;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
@@ -282,19 +282,24 @@ impl Debug for Game {
 /// A CLI to play games of beggar my neighbour
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
 struct Args {
     /// Provide a deck to use instead of a random one
-    deck: Option<String>,
+    #[command(subcommand)]
+    command: Commands,
 }
 
-fn main() {
-    let args = Args::parse();
-    let mut game = if let Some(deck) = args.deck {
-        Game::from_string(&deck)
-    } else {
-        Game::random()
-    };
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Random,
+    Deck {
+        /// The deck to use
+        deck: String,
+    },
+    Longest
+}
 
+fn print_detailed(game: &mut Game) {
     println!("{}", game);
     println!("Stringified: {:?}", game);
 
@@ -304,4 +309,31 @@ fn main() {
     println!("winner: {:?}", game.winner().unwrap());
     println!("turns: {}", stats.turns);
     println!("tricks: {}", stats.tricks);
+}
+
+fn main() {
+    let args = Args::parse();
+    match args.command {
+        Commands::Random => {
+            print_detailed(&mut Game::random());
+        }
+        Commands::Deck { deck } => {
+            print_detailed(&mut Game::from_string(&deck));
+        }
+        Commands::Longest => {
+            let mut longest = 0;
+            let mut longest_game: Option<Game> = None;
+            for _ in 0..100000 {
+                let mut game = Game::random();
+                let copied_game = game.clone();
+                let stats = game.play();
+                if stats.turns > longest {
+                    longest = stats.turns;
+                    longest_game = Some(copied_game);
+                }
+            }
+            
+            print_detailed(&mut longest_game.unwrap());
+        }
+    }
 }
