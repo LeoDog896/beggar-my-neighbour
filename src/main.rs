@@ -1,6 +1,6 @@
 //! implementation of beggar my neighbour card game
 
-use std::fmt::{Debug, Display};
+use std::{fmt::{Debug, Display}, collections::VecDeque};
 use rand::seq::SliceRandom;
 use clap::Parser;
 
@@ -72,8 +72,11 @@ enum Player {
 
 #[derive(Clone)]
 struct Game {
-    p1: Vec<Card>,
-    p2: Vec<Card>,
+    /// Player 1's deck, as a queue (we add to the back and remove from the front)
+    p1: VecDeque<Card>,
+    /// Player 2's deck, as a queue (we add to the back and remove from the front)
+    p2: VecDeque<Card>,
+    /// The middle pile, as a vec (we only ever add to it)
     middle: Vec<Card>,
     current_player: Player,
     penalty: usize,
@@ -89,8 +92,8 @@ impl Game {
         assert!(p2.len() == P_SIZE);
 
         Game {
-            p1: p1.to_vec(),
-            p2: p2.to_vec(),
+            p1: p1.to_vec().into(),
+            p2: p2.to_vec().into(),
             middle: Vec::with_capacity(DECK_SIZE),
             current_player: Player::P1,
             penalty: 0,
@@ -105,8 +108,6 @@ impl Game {
     }
 
     fn from_string(string: &str) -> Game {
-        let mut p1: Vec<Card> = Vec::with_capacity(P_SIZE);
-        let mut p2: Vec<Card> = Vec::with_capacity(P_SIZE);
         let middle: Vec<Card> = Vec::with_capacity(DECK_SIZE);
 
         let current_player = Player::P1;
@@ -114,29 +115,23 @@ impl Game {
 
         let split_string: Vec<&str> = string.split('/').collect();
 
-        for c in split_string[0].chars() {
-            match c {
-                'A' => p1.push(Card::Ace),
-                'K' => p1.push(Card::King),
-                'Q' => p1.push(Card::Queen),
-                'J' => p1.push(Card::Jack),
-                '-' => p1.push(Card::Other),
-                ' ' => (),
-                _ => panic!("invalid character in string"),
-            }
-        }
+        let p1 = split_string[0].chars().map(|c| match c {
+            'A' => Card::Ace,
+            'K' => Card::King,
+            'Q' => Card::Queen,
+            'J' => Card::Jack,
+            '-' => Card::Other,
+            _ => panic!("invalid character in string"),
+        }).collect();
 
-        for c in split_string[1].chars() {
-            match c {
-                'A' => p2.push(Card::Ace),
-                'K' => p2.push(Card::King),
-                'Q' => p2.push(Card::Queen),
-                'J' => p2.push(Card::Jack),
-                '-' => p2.push(Card::Other),
-                ' ' => (),
-                _ => panic!("invalid character in string"),
-            }
-        }
+        let p2 = split_string[1].chars().map(|c| match c {
+            'A' => Card::Ace,
+            'K' => Card::King,
+            'Q' => Card::Queen,
+            'J' => Card::Jack,
+            '-' => Card::Other,
+            _ => panic!("invalid character in string"),
+        }).collect();
 
         Game {
             p1,
@@ -160,8 +155,7 @@ impl Game {
         };
 
         // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
-        let card = current_player_deck
-            .pop()
+        let card = current_player_deck.pop_front()
             .unwrap_or_else(|| panic!("{:?} has no cards", self.current_player));
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
@@ -187,14 +181,7 @@ impl Game {
                     Player::P2 => &mut self.p1,
                 };
 
-                other_player_deck.splice(
-                    0..0,
-                    self.middle
-                        .drain(..)
-                        .rev()
-                        .collect::<Vec<Card>>()
-                        .into_iter(),
-                );
+                other_player_deck.extend(self.middle.drain(..).rev());
 
                 self.switch_player();
                 self.penalty = 0;
@@ -262,10 +249,14 @@ impl Debug for Game {
             s.push_str(&format!("{}", card));
         }
 
-        s.push_str("/");
+        s.push('/');
         
         for card in &self.p2 {
             s.push_str(&format!("{}", card));
+        }
+
+        if self.penalty > 0 {
+            s.push_str(&format!("+{}", self.penalty));
         }
 
         write!(f, "{}", s)
