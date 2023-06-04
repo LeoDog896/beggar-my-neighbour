@@ -223,6 +223,10 @@ impl Game {
                 tricks += 1;
             }
             turns += 1;
+            if turns > 100000 {
+                print_detailed(self);
+                panic!("game took too long");
+            }
         }
 
         GameStats {
@@ -296,6 +300,8 @@ enum Commands {
         /// The deck to use
         deck: String,
     },
+    /// Prints the stats for the longest game
+    Record,
     Longest
 }
 
@@ -320,6 +326,9 @@ fn main() {
         Commands::Deck { deck } => {
             print_detailed(&mut Game::from_string(&deck));
         }
+        Commands::Record => {
+            print_detailed(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q"));
+        }
         Commands::Longest => {
             let mut longest = 0;
             let mut longest_game: Option<Game> = None;
@@ -332,7 +341,7 @@ fn main() {
                     longest_game = Some(copied_game);
                 }
             }
-            
+
             print_detailed(&mut longest_game.unwrap());
         }
     }
