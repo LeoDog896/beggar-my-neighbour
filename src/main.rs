@@ -1,5 +1,6 @@
 //! implementation of beggar my neighbour card game
 
+use rayon::prelude::*;
 use std::{fmt::{Debug, Display}, collections::VecDeque};
 use rand::seq::SliceRandom;
 use clap::{Parser, Subcommand};
@@ -330,7 +331,8 @@ fn main() {
             print_detailed(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q"));
         }
         Commands::Longest => {
-            let (mut longest_game, _) = (0..100_000)
+            let (mut longest_game, _) = (0..100_000_000)
+                .into_par_iter()
                 .map(|_| {
                     let mut game = Game::random();
                     let copied_game = game.clone();
