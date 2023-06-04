@@ -1,8 +1,8 @@
 //! implementation of beggar my neighbour card game
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
-use rand::{Rng, seq::SliceRandom};
+use rand::{seq::SliceRandom, Rng};
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
@@ -38,10 +38,26 @@ fn static_deck() -> [Card; 52] {
 const DECK_SIZE: usize = 52;
 const P_SIZE: usize = DECK_SIZE / 2;
 
+enum Player {
+    P1,
+    P2,
+}
+
+struct GameState {
+    player: Player,
+    won: Option<Player>,
+}
+
 struct Game {
     p1: [Option<Card>; DECK_SIZE],
     p2: [Option<Card>; DECK_SIZE],
     middle: [Option<Card>; DECK_SIZE],
+    state: GameState,
+}
+
+struct GameStats {
+    tricks: usize,
+    cards_played: usize,
 }
 
 impl Game {
@@ -62,11 +78,36 @@ impl Game {
             p2[i] = Some(p2_orig[i]);
         }
 
-        Game { p1, p2, middle }
+        Game {
+            p1,
+            p2,
+            middle,
+            state: GameState {
+                player: Player::P1,
+                won: None,
+            },
+        }
+    }
+
+    /// Emulates a step of beggar my neighbour as a player,
+    /// modifying the game state
+    fn step(&mut self, player: Player) {
+        
+    }
+
+    /// Plays out a game of beggar my neighbour, returning statistics about the game
+    fn play(&self) -> GameStats {
+        let mut game = self.clone();
+
+        // TODO: implement
+        GameStats {
+            tricks: 0,
+            cards_played: 0,
+        }
     }
 }
 
-impl Display for Game {
+impl Debug for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
 
@@ -101,5 +142,5 @@ impl Display for Game {
 fn main() {
     let game = Game::random();
 
-    println!("{}", game);
+    println!("{:?}", game);
 }
