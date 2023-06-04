@@ -1,8 +1,8 @@
 //! implementation of beggar my neighbour card game
 
 use std::fmt::{Debug, Display};
-
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
+use clap::Parser;
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
@@ -104,6 +104,49 @@ impl Game {
         }
     }
 
+    fn from_string(string: &str) -> Game {
+        let mut p1: Vec<Card> = Vec::with_capacity(P_SIZE);
+        let mut p2: Vec<Card> = Vec::with_capacity(P_SIZE);
+        let middle: Vec<Card> = Vec::with_capacity(DECK_SIZE);
+
+        let current_player = Player::P1;
+        let penalty = 0;
+
+        let split_string: Vec<&str> = string.split('/').collect();
+
+        for c in split_string[0].chars() {
+            match c {
+                'A' => p1.push(Card::Ace),
+                'K' => p1.push(Card::King),
+                'Q' => p1.push(Card::Queen),
+                'J' => p1.push(Card::Jack),
+                '-' => p1.push(Card::Other),
+                ' ' => (),
+                _ => panic!("invalid character in string"),
+            }
+        }
+
+        for c in split_string[1].chars() {
+            match c {
+                'A' => p2.push(Card::Ace),
+                'K' => p2.push(Card::King),
+                'Q' => p2.push(Card::Queen),
+                'J' => p2.push(Card::Jack),
+                '-' => p2.push(Card::Other),
+                ' ' => (),
+                _ => panic!("invalid character in string"),
+            }
+        }
+
+        Game {
+            p1,
+            p2,
+            middle,
+            current_player,
+            penalty,
+        }
+    }
+
     /// Emulates a step of beggar my neighbour as a player,
     /// modifying the game state
     fn step(&mut self) {
@@ -119,7 +162,7 @@ impl Game {
         // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
         let card = current_player_deck
             .pop()
-            .expect(format!("{:?} has no cards", self.current_player).as_str());
+            .unwrap_or_else(|| panic!("{:?} has no cards", self.current_player));
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
         if card.penalty() > 0 {
@@ -186,7 +229,7 @@ impl Game {
     }
 }
 
-impl Debug for Game {
+impl Display for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::new();
 
@@ -211,14 +254,45 @@ impl Debug for Game {
     }
 }
 
+impl Debug for Game {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s = String::with_capacity(DECK_SIZE * 2 + 1);
+
+        for card in &self.p1 {
+            s.push_str(&format!("{}", card));
+        }
+
+        s.push_str("/");
+        
+        for card in &self.p2 {
+            s.push_str(&format!("{}", card));
+        }
+
+        write!(f, "{}", s)
+    }
+}
+
+/// A CLI to play games of beggar my neighbour
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Provide a deck to use instead of a random one
+    deck: Option<String>,
+}
+
 fn main() {
-    let mut game = Game::random();
+    let args = Args::parse();
+    let mut game = if let Some(deck) = args.deck {
+        Game::from_string(&deck)
+    } else {
+        Game::random()
+    };
 
-    println!("{:?}", game);
-
-    let steps = game.play();
+    println!("{}", game);
+    println!("Stringified: {:?}", game);
 
     println!();
-    println!("{:?}", game);
-    println!("winner: {:?}, steps: {}", game.winner(), steps);
+
+    let turns = game.play();
+    println!("winner: {:?}, turns: {}", game.winner().unwrap(), turns);
 }
