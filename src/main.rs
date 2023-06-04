@@ -82,6 +82,11 @@ struct Game {
     penalty: usize,
 }
 
+struct GameStats {
+    turns: u128,
+    tricks: u128,
+}
+
 impl Game {
     fn random() -> Game {
         let mut rng = rand::thread_rng();
@@ -144,10 +149,10 @@ impl Game {
 
     /// Emulates a step of beggar my neighbour as a player,
     /// modifying the game state
-    fn step(&mut self) {
-        if self.winner().is_some() {
-            return;
-        }
+    /// 
+    /// Returns true if there was a trick, false otherwise
+    fn step(&mut self) -> bool {
+        assert!(self.winner().is_none());
 
         let current_player_deck = match self.current_player {
             Player::P1 => &mut self.p1,
@@ -160,10 +165,11 @@ impl Game {
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
         if card.penalty() > 0 {
+            let previous_penalty = self.penalty;
             self.penalty = card.penalty();
             self.middle.push(card);
             self.switch_player();
-            return;
+            return previous_penalty == 0;
         }
 
         match self.penalty {
@@ -181,7 +187,9 @@ impl Game {
                     Player::P2 => &mut self.p1,
                 };
 
-                other_player_deck.extend(self.middle.drain(..).rev());
+                for card in self.middle.drain(..) {
+                    other_player_deck.push_back(card);
+                }
 
                 self.switch_player();
                 self.penalty = 0;
@@ -190,7 +198,9 @@ impl Game {
                 self.middle.push(card);
                 self.penalty -= 1;
             }
-        }
+        };
+
+        return false;
     }
 
     fn winner(&self) -> Option<Player> {
@@ -204,15 +214,21 @@ impl Game {
     }
 
     /// Plays out a game of beggar my neighbour, returning how many steps it took
-    fn play(&mut self) -> u128 {
-        let mut steps = 0;
+    fn play(&mut self) -> GameStats {
+        let mut turns = 0;
+        let mut tricks = 0;
 
         while self.winner().is_none() {
-            self.step();
-            steps += 1;
+            if self.step() {
+                tricks += 1;
+            }
+            turns += 1;
         }
 
-        steps
+        GameStats {
+            turns,
+            tricks,
+        }
     }
 }
 
@@ -284,6 +300,8 @@ fn main() {
 
     println!();
 
-    let turns = game.play();
-    println!("winner: {:?}, turns: {}", game.winner().unwrap(), turns);
+    let stats = game.play();
+    println!("winner: {:?}", game.winner().unwrap());
+    println!("turns: {}", stats.turns);
+    println!("tricks: {}", stats.tricks);
 }
