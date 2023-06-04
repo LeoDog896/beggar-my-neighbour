@@ -112,16 +112,40 @@ impl Game {
             self.penalty = card.penalty();
             self.middle.push(card);
             self.switch_player();
+            return;
         }
 
-        // if the game has penalty, the player must play until the penalty is over
-        if self.penalty > 0 {
-            self.middle.push(card);
-            self.penalty -= 1;
-        } else {
-            // if the game has no penalty, the player plays a card and the other player must play
-            self.middle.push(card);
-            self.switch_player();
+        match self.penalty {
+            0 => {
+                self.middle.push(card);
+                self.switch_player();
+            }
+            // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
+            // from the middle and adds them to the beginning of their deck (in reverse order)
+            1 => {
+                self.middle.push(card);
+
+                let other_player_deck = match self.current_player {
+                    Player::P1 => &mut self.p2,
+                    Player::P2 => &mut self.p1,
+                };
+
+                other_player_deck.splice(
+                    0..0,
+                    self.middle
+                        .drain(..)
+                        .rev()
+                        .collect::<Vec<Card>>()
+                        .into_iter(),
+                );
+
+                self.switch_player();
+                self.penalty = 0;
+            }
+            _ => {
+                self.middle.push(card);
+                self.penalty -= 1;
+            }
         }
     }
 
