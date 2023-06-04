@@ -20,7 +20,7 @@ enum Card {
 }
 
 impl Card {
-    fn penalty(&self) -> usize {
+    fn penalty(self) -> usize {
         match self {
             Card::Ace => 4,
             Card::King => 3,
@@ -41,7 +41,7 @@ impl Display for Card {
             Card::Other => "-",
         };
 
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -94,7 +94,7 @@ impl Game {
         deck.shuffle(&mut rng);
 
         let (p1, p2) = deck.split_at(P_SIZE);
-        assert!(p2.len() == P_SIZE);
+        debug_assert!(p2.len() == P_SIZE);
 
         Game {
             p1: p1.to_vec().into(),
@@ -152,7 +152,7 @@ impl Game {
     /// 
     /// Returns true if there was a trick, false otherwise
     fn step(&mut self) -> bool {
-        assert!(self.winner().is_none());
+        debug_assert!(self.winner().is_none());
 
         let current_player_deck = match self.current_player {
             Player::P1 => &mut self.p1,
@@ -200,7 +200,7 @@ impl Game {
             }
         };
 
-        return false;
+        false
     }
 
     fn winner(&self) -> Option<Player> {
@@ -223,7 +223,7 @@ impl Game {
                 tricks += 1;
             }
             turns += 1;
-            if turns > 100000 {
+            if turns > 100_000 {
                 print_detailed(self);
                 panic!("game took too long");
             }
@@ -242,22 +242,22 @@ impl Display for Game {
 
         s.push_str("p1: ");
         for card in &self.p1 {
-            s.push_str(&format!("{}", card));
+            s.push_str(&format!("{card}"));
         }
 
         s.push_str("\np2: ");
         for card in &self.p2 {
-            s.push_str(&format!("{}", card));
+            s.push_str(&format!("{card}"));
         }
 
         if !self.middle.is_empty() {
             s.push_str("\nmiddle: ");
             for card in &self.middle {
-                s.push_str(&format!("{}", card));
+                s.push_str(&format!("{card}"));
             }
         }
 
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -266,20 +266,20 @@ impl Debug for Game {
         let mut s = String::with_capacity(DECK_SIZE * 2 + 1);
 
         for card in &self.p1 {
-            s.push_str(&format!("{}", card));
+            s.push_str(&format!("{card}"));
         }
 
         s.push('/');
         
         for card in &self.p2 {
-            s.push_str(&format!("{}", card));
+            s.push_str(&format!("{card}"));
         }
 
         if self.penalty > 0 {
             s.push_str(&format!("+{}", self.penalty));
         }
 
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -306,8 +306,8 @@ enum Commands {
 }
 
 fn print_detailed(game: &mut Game) {
-    println!("{}", game);
-    println!("Stringified: {:?}", game);
+    println!("{game}");
+    println!("Stringified: {game:?}");
 
     println!();
 
@@ -330,19 +330,17 @@ fn main() {
             print_detailed(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q"));
         }
         Commands::Longest => {
-            let mut longest = 0;
-            let mut longest_game: Option<Game> = None;
-            for _ in 0..100000 {
-                let mut game = Game::random();
-                let copied_game = game.clone();
-                let stats = game.play();
-                if stats.turns > longest {
-                    longest = stats.turns;
-                    longest_game = Some(copied_game);
-                }
-            }
+            let (mut longest_game, _) = (0..100_000)
+                .map(|_| {
+                    let mut game = Game::random();
+                    let copied_game = game.clone();
+                    let stats = game.play();
+                    (copied_game, stats.turns)
+                })
+                .max_by_key(|(_, turns)| *turns)
+                .unwrap();
 
-            print_detailed(&mut longest_game.unwrap());
+            print_detailed(&mut longest_game);
         }
     }
 }

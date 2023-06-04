@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.3.1", features = ["derive"] }
 rand = "0.8.5"
+
+# uncomment this when doing performance testing
+# [profile.release]
+# debug = true
