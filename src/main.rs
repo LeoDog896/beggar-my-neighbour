@@ -1,7 +1,7 @@
 //! implementation of beggar my neighbour card game
 
 use std::{fmt::{Debug, Display}, collections::VecDeque, sync::Mutex};
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, rngs::SmallRng, SeedableRng};
 use clap::{Parser, Subcommand};
 
 #[macro_use]
@@ -95,11 +95,10 @@ struct GameStats {
 }
 
 impl Game {
-    fn random() -> Game {
+    fn random(rng: &mut SmallRng) -> Game {
         // We can just shuffle the original deck since it will be re-shuffled every time
-        let mut rng = rand::thread_rng();
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
-        deck.shuffle(&mut rng);
+        deck.shuffle(rng);
 
         let (p1, p2) = deck.split_at(P_SIZE);
         debug_assert!(p2.len() == P_SIZE);
@@ -174,8 +173,7 @@ impl Game {
         };
 
         // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
-        let card = current_player_deck.pop_front()
-            .unwrap_or_else(|| panic!("{:?} has no cards", self.current_player));
+        let card = current_player_deck.pop_front().unwrap();
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
         if card.penalty() > 0 {
@@ -192,7 +190,7 @@ impl Game {
                 self.switch_player();
             }
             // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
-            // from the middle and adds them to the beginning of their deck (in reverse order)
+            // from the middle and adds them to the beginning of their deck
             1 => {
                 self.middle.push(card);
 
@@ -238,8 +236,10 @@ impl Game {
             }
             turns += 1;
             if turns > 100_000 {
-                println!("{}", detail(self));
-                panic!("game took too long");
+                return GameStats {
+                    turns,
+                    tricks,
+                }
             }
         }
 
@@ -337,9 +337,10 @@ fn detail(game: &mut Game) -> String {
 
 fn main() {
     let args = Args::parse();
+    let mut rng = SmallRng::from_entropy();
     match args.command {
         Commands::Random => {
-            println!("{}", detail(&mut Game::random()));
+            println!("{}", detail(&mut Game::random(&mut rng)));
         }
         Commands::Deck { deck } => {
             println!("{}", detail(&mut Game::from_string(&deck)));
@@ -351,7 +352,7 @@ fn main() {
             let mut best_length = 0;
 
             loop {
-                let game = Game::random();
+                let game = Game::random(&mut rng);
                 let mut playable_game = game.clone();
                 let stats = playable_game.play();
 

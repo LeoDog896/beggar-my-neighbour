@@ -9,7 +9,7 @@ The general rules of the game can be found in [wikipedia](https://en.wikipedia.o
 ## Running
 
 ```sh
-RUSTFLAGS="-C target-cpu=native" cargo run --release -- longest
+RUSTFLAGS="--emit=asm -C target-cpu=native" cargo run --release -- longest
 ```
 
 ## Game implementation
@@ -35,3 +35,18 @@ However, in order to step through the game, we need to keep track of the followi
 As winning can be determined by this state, we don't need to keep track of the winner.
 
 The decks should be represented as a queue, as we only ever need to add to the bottom and remove from the top.
+
+## Perf testing
+
+```sh
+# make sure to uncomment the part in Cargo.toml
+cargo build --release
+perf record -g target/release/beggar-my-neighbour longest
+perf report
+```
+
+For a simple visual with flamegraphs:
+
+```sh
+cargo flamegraph -- longest
+```
