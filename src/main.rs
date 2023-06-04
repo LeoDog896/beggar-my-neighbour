@@ -5,6 +5,9 @@ use std::{fmt::{Debug, Display}, collections::VecDeque};
 use rand::seq::SliceRandom;
 use clap::{Parser, Subcommand};
 
+#[macro_use]
+extern crate lazy_static;
+
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
 #[derive(Debug, Copy, Clone)]
@@ -62,6 +65,10 @@ fn static_deck() -> [Card; 52] {
     deck
 }
 
+lazy_static! {
+    static ref STATIC_DECK: [Card; 52] = static_deck();
+}
+
 const DECK_SIZE: usize = 52;
 const P_SIZE: usize = DECK_SIZE / 2;
 
@@ -91,15 +98,21 @@ struct GameStats {
 impl Game {
     fn random() -> Game {
         let mut rng = rand::thread_rng();
-        let mut deck: [Card; DECK_SIZE] = static_deck();
+        let mut deck: [Card; DECK_SIZE] = STATIC_DECK.clone();
         deck.shuffle(&mut rng);
 
         let (p1, p2) = deck.split_at(P_SIZE);
         debug_assert!(p2.len() == P_SIZE);
 
+        let mut p1_queue = VecDeque::with_capacity(DECK_SIZE);
+        let mut p2_queue = VecDeque::with_capacity(DECK_SIZE);
+
+        p1_queue.append(&mut p1.to_vec().into());
+        p2_queue.append(&mut p2.to_vec().into());
+
         Game {
-            p1: p1.to_vec().into(),
-            p2: p2.to_vec().into(),
+            p1: p1_queue,
+            p2: p2_queue,
             middle: Vec::with_capacity(DECK_SIZE),
             current_player: Player::P1,
             penalty: 0,
@@ -225,7 +238,7 @@ impl Game {
             }
             turns += 1;
             if turns > 100_000 {
-                print_detailed(self);
+                println!("{}", detail(self));
                 panic!("game took too long");
             }
         }
@@ -306,43 +319,56 @@ enum Commands {
     Longest
 }
 
-fn print_detailed(game: &mut Game) {
-    println!("{game}");
-    println!("Stringified: {game:?}");
+fn detail(game: &mut Game) -> String {
+    let mut s = String::new();
 
-    println!();
-
+    s.push_str(&format!("{game}\n"));
+    s.push_str(&format!("stringified: {game:?}\n"));
     let stats = game.play();
-    println!("winner: {:?}", game.winner().unwrap());
-    println!("turns: {}", stats.turns);
-    println!("tricks: {}", stats.tricks);
+
+    s.push_str("\n");
+
+    s.push_str(&format!("winner: {winner:?}\n", winner = game.winner().unwrap()));
+    s.push_str(&format!("turns: {turns}\n", turns = stats.turns));
+    s.push_str(&format!("tricks: {tricks}\n", tricks = stats.tricks));
+
+    s
 }
 
 fn main() {
     let args = Args::parse();
     match args.command {
         Commands::Random => {
-            print_detailed(&mut Game::random());
+            println!("{}", detail(&mut Game::random()));
         }
         Commands::Deck { deck } => {
-            print_detailed(&mut Game::from_string(&deck));
+            println!("{}", detail(&mut Game::from_string(&deck)));
         }
         Commands::Record => {
-            print_detailed(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q"));
+            println!("{}", detail(&mut Game::from_string("----K---A--Q-A--JJA------J/-----KK---------A-JK-Q-Q-Q")));
         }
         Commands::Longest => {
-            let (mut longest_game, _) = (0..100_000_000)
-                .into_par_iter()
-                .map(|_| {
-                    let mut game = Game::random();
-                    let copied_game = game.clone();
-                    let stats = game.play();
-                    (copied_game, stats.turns)
-                })
-                .max_by_key(|(_, turns)| *turns)
-                .unwrap();
+            let mut best_length = 0;
 
-            print_detailed(&mut longest_game);
+            loop {
+                let game = Game::random();
+                let mut playable_game = game.clone();
+                let stats = playable_game.play();
+
+                if stats.turns > best_length {
+                    best_length = stats.turns;
+
+                    println!("{game}");
+                    println!("stringified: {game:?}\n");
+
+                    println!("winner: {winner:?}", winner = playable_game.winner().unwrap());
+                    println!("turns: {turns}", turns = stats.turns);
+                    println!("tricks: {tricks}", tricks = stats.tricks);
+
+                    println!("-------------------");
+
+                }
+            }
         }
     }
 }
