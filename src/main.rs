@@ -31,6 +31,20 @@ impl Card {
     }
 }
 
+impl Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Card::Ace => "A",
+            Card::King => "K",
+            Card::Queen => "Q",
+            Card::Jack => "J",
+            Card::Other => "-",
+        };
+
+        write!(f, "{}", s)
+    }
+}
+
 fn static_deck() -> [Card; 52] {
     let mut deck: [Card; 52] = [Card::Other; 52];
 
@@ -178,17 +192,19 @@ impl Debug for Game {
 
         s.push_str("p1: ");
         for card in &self.p1 {
-            s.push_str(&format!("{:?}, ", card));
+            s.push_str(&format!("{}", card));
         }
 
         s.push_str("\np2: ");
         for card in &self.p2 {
-            s.push_str(&format!("{:?}, ", card));
+            s.push_str(&format!("{}", card));
         }
 
-        s.push_str("\nmiddle: ");
-        for card in &self.middle {
-            s.push_str(&format!("{:?}, ", card));
+        if !self.middle.is_empty() {
+            s.push_str("\nmiddle: ");
+            for card in &self.middle {
+                s.push_str(&format!("{}", card));
+            }
         }
 
         write!(f, "{}", s)
@@ -202,6 +218,7 @@ fn main() {
 
     let steps = game.play();
 
+    println!();
     println!("{:?}", game);
     println!("winner: {:?}, steps: {}", game.winner(), steps);
 }
