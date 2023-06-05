@@ -105,8 +105,8 @@ struct Game {
 }
 
 struct GameStats {
-    turns: u128,
-    tricks: u128,
+    turns: usize,
+    tricks: usize,
 }
 
 impl Game {
