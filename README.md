@@ -6,7 +6,7 @@ attemps in solving:
 
 The general rules of the game can be found in [wikipedia](https://en.wikipedia.org/wiki/Beggar-my-neighbour).
 
-## Running
+## Running Game Simulations
 
 ```sh
 RUSTFLAGS="--emit=asm -C target-cpu=native" cargo run --release -- longest
