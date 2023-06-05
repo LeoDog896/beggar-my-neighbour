@@ -166,52 +166,54 @@ impl Game {
     ///
     /// Returns true if there was a trick, false otherwise
     fn step(&mut self) -> bool {
-        debug_assert!(self.winner().is_none());
+        unsafe {
+            debug_assert!(self.winner().is_none());
 
-        let current_player_deck = match self.current_player {
-            Player::P1 => &mut self.p1,
-            Player::P2 => &mut self.p2,
-        };
+            let current_player_deck = match self.current_player {
+                Player::P1 => &mut self.p1,
+                Player::P2 => &mut self.p2,
+            };
 
-        // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
-        let card = current_player_deck.pop();
+            // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
+            let card = current_player_deck.pop_unchecked();
 
-        // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
-        if card.penalty() > 0 {
-            let previous_penalty = self.penalty;
-            self.penalty = card.penalty();
-            self.middle.push(card);
-            self.switch_player();
-            return previous_penalty == 0;
+            // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
+            if card.penalty() > 0 {
+                let previous_penalty = self.penalty;
+                self.penalty = card.penalty();
+                self.middle.push_unchecked(card);
+                self.switch_player();
+                return previous_penalty == 0;
+            }
+
+            match self.penalty {
+                0 => {
+                    self.middle.push_unchecked(card);
+                    self.switch_player();
+                }
+                // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
+                // from the middle and adds them to the beginning of their deck
+                1 => {
+                    self.middle.push_unchecked(card);
+
+                    let other_player_deck = match self.current_player {
+                        Player::P1 => &mut self.p2,
+                        Player::P2 => &mut self.p1,
+                    };
+
+                    other_player_deck.extend(self.middle.drain());
+
+                    self.switch_player();
+                    self.penalty = 0;
+                }
+                _ => {
+                    self.middle.push_unchecked(card);
+                    self.penalty -= 1;
+                }
+            };
+
+            false
         }
-
-        match self.penalty {
-            0 => {
-                self.middle.push(card);
-                self.switch_player();
-            }
-            // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
-            // from the middle and adds them to the beginning of their deck
-            1 => {
-                self.middle.push(card);
-
-                let other_player_deck = match self.current_player {
-                    Player::P1 => &mut self.p2,
-                    Player::P2 => &mut self.p1,
-                };
-
-                other_player_deck.extend(self.middle.drain());
-
-                self.switch_player();
-                self.penalty = 0;
-            }
-            _ => {
-                self.middle.push(card);
-                self.penalty -= 1;
-            }
-        };
-
-        false
     }
 
     fn winner(&self) -> Option<Player> {

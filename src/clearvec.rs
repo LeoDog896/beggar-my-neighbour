@@ -16,7 +16,7 @@ impl<T> RawValIter<T> {
     unsafe fn new(slice: &[T]) -> Self {
         RawValIter {
             start: slice.as_ptr(),
-            end: if slice.len() == 0 {
+            end: if slice.is_empty() {
                 // if `len = 0`, then this is not actually allocated memory.
                 // Need to avoid offsetting because that will give wrong
                 // information to LLVM via GEP.
@@ -46,13 +46,6 @@ impl<T> Iterator for RawValIter<T> {
             }
         }
     }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let elem_size = mem::size_of::<T>();
-        let len = (self.end as usize - self.start as usize)
-                  / if elem_size == 0 { 1 } else { elem_size };
-        (len, Some(len))
-    }
 }
 
 pub struct Drain<'a, T: 'a> {
@@ -63,7 +56,6 @@ pub struct Drain<'a, T: 'a> {
 impl<'a, T> Iterator for Drain<'a, T> {
     type Item = T;
     fn next(&mut self) -> Option<T> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
 }
 
 impl<'a, T> Drop for Drain<'a, T> {
@@ -86,11 +78,11 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
         }
     }
 
-    pub fn push(&mut self, value: T) {
+    pub unsafe fn push_unchecked(&mut self, value: T) {
         // This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
         debug_assert!(self.cursor < N, "ClearVec is full!");
         unsafe { 
-            *self.data.get_unchecked_mut(self.cursor) = value 
+            *self.data.get_unchecked_mut(self.cursor) = value;
         };
         self.cursor += 1;
     }

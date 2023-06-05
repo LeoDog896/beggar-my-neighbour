@@ -16,7 +16,7 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
         }
     }
 
-    /// Get a SliceFifo from a slice of length M, where M <= N.
+    /// Get a `SliceFifo` from a slice of length M, where M <= N.
     pub fn from_slice(slice: &[T]) -> Self {
         debug_assert!(slice.len() <= N, "SliceFifo::from_slice: slice is too long!");
         let mut data = [unsafe { std::mem::zeroed() }; N];
@@ -32,7 +32,9 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
 
     pub fn push(&mut self, item: T) {
         let tail = (self.head + self.len) % N;
-        self.data[tail] = item;
+        unsafe {
+            *self.data.get_unchecked_mut(tail) = item;
+        }
         if self.len == N {
             self.head = (self.head + 1) % N;
         } else {
@@ -40,11 +42,12 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
         }
     }
 
-    pub fn pop(&mut self) -> T {
-        let item = self.data[self.head];
+    /// Skips bounds checking. Use with caution!
+    pub unsafe fn pop_unchecked(&mut self) -> T {
+        let item = self.data.get_unchecked(self.head);
         self.head = (self.head + 1) % N;
         self.len -= 1;
-        item
+        *item
     }
 
     pub fn as_slice(&self) -> &[T] {
