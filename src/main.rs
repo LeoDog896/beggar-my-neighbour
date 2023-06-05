@@ -1,8 +1,12 @@
 //! implementation of beggar my neighbour card game
 
-use std::{fmt::{Debug, Display}, collections::VecDeque, sync::Mutex};
-use rand::{seq::SliceRandom, rngs::SmallRng, SeedableRng};
 use clap::{Parser, Subcommand};
+use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
+use std::{
+    collections::VecDeque,
+    fmt::{Debug, Display},
+    sync::Mutex,
+};
 
 #[macro_use]
 extern crate lazy_static;
@@ -133,23 +137,29 @@ impl Game {
 
         let split_string: Vec<&str> = string.split('/').collect();
 
-        let p1 = split_string[0].chars().map(|c| match c {
-            'A' => Card::Ace,
-            'K' => Card::King,
-            'Q' => Card::Queen,
-            'J' => Card::Jack,
-            '-' => Card::Other,
-            _ => panic!("invalid character in string"),
-        }).collect();
+        let p1 = split_string[0]
+            .chars()
+            .map(|c| match c {
+                'A' => Card::Ace,
+                'K' => Card::King,
+                'Q' => Card::Queen,
+                'J' => Card::Jack,
+                '-' => Card::Other,
+                _ => panic!("invalid character in string"),
+            })
+            .collect();
 
-        let p2 = split_string[1].chars().map(|c| match c {
-            'A' => Card::Ace,
-            'K' => Card::King,
-            'Q' => Card::Queen,
-            'J' => Card::Jack,
-            '-' => Card::Other,
-            _ => panic!("invalid character in string"),
-        }).collect();
+        let p2 = split_string[1]
+            .chars()
+            .map(|c| match c {
+                'A' => Card::Ace,
+                'K' => Card::King,
+                'Q' => Card::Queen,
+                'J' => Card::Jack,
+                '-' => Card::Other,
+                _ => panic!("invalid character in string"),
+            })
+            .collect();
 
         Game {
             p1,
@@ -162,7 +172,7 @@ impl Game {
 
     /// Emulates a step of beggar my neighbour as a player,
     /// modifying the game state
-    /// 
+    ///
     /// Returns true if there was a trick, false otherwise
     fn step(&mut self) -> bool {
         debug_assert!(self.winner().is_none());
@@ -236,17 +246,11 @@ impl Game {
             }
             turns += 1;
             if turns > 100_000 {
-                return GameStats {
-                    turns,
-                    tricks,
-                }
+                return GameStats { turns, tricks };
             }
         }
 
-        GameStats {
-            turns,
-            tricks,
-        }
+        GameStats { turns, tricks }
     }
 }
 
@@ -284,7 +288,7 @@ impl Debug for Game {
         }
 
         s.push('/');
-        
+
         for card in &self.p2 {
             s.push_str(&format!("{card}"));
         }
@@ -316,7 +320,7 @@ enum Commands {
     },
     /// Prints the stats for the longest game
     Record,
-    Longest
+    Longest,
 }
 
 fn detail(game: &mut Game) -> String {
@@ -328,7 +332,10 @@ fn detail(game: &mut Game) -> String {
 
     s.push('\n');
 
-    s.push_str(&format!("winner: {winner:?}\n", winner = game.winner().unwrap()));
+    s.push_str(&format!(
+        "winner: {winner:?}\n",
+        winner = game.winner().unwrap()
+    ));
     s.push_str(&format!("turns: {turns}\n", turns = stats.turns));
     s.push_str(&format!("tricks: {tricks}\n", tricks = stats.tricks));
 
@@ -346,7 +353,12 @@ fn main() {
             println!("{}", detail(&mut Game::from_string(&deck)));
         }
         Commands::Record => {
-            println!("{}", detail(&mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---")));
+            println!(
+                "{}",
+                detail(&mut Game::from_string(
+                    "---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---"
+                ))
+            );
         }
         Commands::Longest => {
             let mut best_length = 0;
@@ -362,12 +374,14 @@ fn main() {
                     println!("{game}");
                     println!("stringified: {game:?}\n");
 
-                    println!("winner: {winner:?}", winner = playable_game.winner().unwrap());
+                    println!(
+                        "winner: {winner:?}",
+                        winner = playable_game.winner().unwrap()
+                    );
                     println!("turns: {turns}", turns = stats.turns);
                     println!("tricks: {tricks}", tricks = stats.tricks);
 
                     println!("-------------------");
-
                 }
             }
         }
