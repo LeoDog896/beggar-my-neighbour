@@ -1,13 +1,14 @@
 //! implementation of beggar my neighbour card game
 
 mod clearvec;
+mod slicefifo;
 
 use clap::{Parser, Subcommand};
 use clearvec::ClearVec;
 use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
 use rayon::prelude::ParallelIterator;
+use slicefifo::SliceFifo;
 use std::{
-    collections::VecDeque,
     fmt::{Debug, Display},
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -100,9 +101,9 @@ enum Player {
 #[derive(Clone)]
 struct Game {
     /// Player 1's deck, as a queue (we add to the back and remove from the front)
-    p1: VecDeque<Card>,
+    p1: SliceFifo<Card, DECK_SIZE>,
     /// Player 2's deck, as a queue (we add to the back and remove from the front)
-    p2: VecDeque<Card>,
+    p2: SliceFifo<Card, DECK_SIZE>,
     /// The middle pile, as a vec (we only ever add to it)
     middle: ClearVec<Card, DECK_SIZE>,
     current_player: Player,
@@ -123,15 +124,9 @@ impl Game {
         let (p1, p2) = deck.split_at(P_SIZE);
         debug_assert!(p2.len() == P_SIZE);
 
-        let mut p1_queue = VecDeque::with_capacity(DECK_SIZE);
-        let mut p2_queue = VecDeque::with_capacity(DECK_SIZE);
-
-        p1_queue.extend(p1);
-        p2_queue.extend(p2);
-
         Self {
-            p1: p1_queue,
-            p2: p2_queue,
+            p1: SliceFifo::from_slice(p1),
+            p2: SliceFifo::from_slice(p2),
             middle: ClearVec::new(),
             current_player: Player::P1,
             penalty: 0,
@@ -179,7 +174,7 @@ impl Game {
         };
 
         // have the player play a card. we can safely unwrap here because we know the player has cards (otherwise the game would be over)
-        let card = current_player_deck.pop_front().unwrap();
+        let card = current_player_deck.pop();
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
         if card.penalty() > 0 {
@@ -205,8 +200,7 @@ impl Game {
                     Player::P2 => &mut self.p1,
                 };
 
-                other_player_deck.extend(self.middle.iter());
-                self.middle.clear();
+                other_player_deck.extend(self.middle.drain());
 
                 self.switch_player();
                 self.penalty = 0;
@@ -254,12 +248,12 @@ impl Display for Game {
         let mut s = String::new();
 
         s.push_str("p1: ");
-        for card in &self.p1 {
+        for card in self.p1.iter() {
             s.push_str(&format!("{card}"));
         }
 
         s.push_str("\np2: ");
-        for card in &self.p2 {
+        for card in self.p2.iter() {
             s.push_str(&format!("{card}"));
         }
 
@@ -278,13 +272,13 @@ impl Debug for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::with_capacity(DECK_SIZE + 4);
 
-        for card in &self.p1 {
+        for card in self.p1.iter() {
             s.push_str(&format!("{card}"));
         }
 
         s.push('/');
 
-        for card in &self.p2 {
+        for card in self.p2.iter() {
             s.push_str(&format!("{card}"));
         }
 
