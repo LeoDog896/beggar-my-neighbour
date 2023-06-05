@@ -5,7 +5,7 @@ mod slicefifo;
 
 use clap::{Parser, Subcommand};
 use clearvec::ClearVec;
-use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
+use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng, Rng};
 use rayon::prelude::ParallelIterator;
 use slicefifo::SliceFifo;
 use std::{
@@ -116,7 +116,7 @@ struct GameStats {
 }
 
 impl Game {
-    fn random(rng: &mut SmallRng) -> Self {
+    fn random<R>(rng: &mut R) -> Self where R: Rng + ?Sized {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
         deck.shuffle(rng);
@@ -336,7 +336,7 @@ fn main() {
     let rng: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
     match args.command {
         Commands::Random => {
-            println!("{}", detail(&mut Game::random(&mut rng.lock().unwrap())));
+            println!("{}", detail(&mut Game::random(&mut *rng.lock().unwrap())));
         }
         Commands::Deck { deck } => {
             println!("{}", detail(&mut Game::from_string(&deck)));
@@ -353,7 +353,7 @@ fn main() {
             let best_length: AtomicUsize = AtomicUsize::new(0);
 
             rayon::iter::repeat(())
-                .map(|_| Game::random(&mut rng.lock().unwrap()))
+                .map(|_| Game::random(&mut *rng.lock().unwrap()))
                 .for_each(|game| {
                     let mut playable_game = game.clone();
                     let stats = playable_game.play();

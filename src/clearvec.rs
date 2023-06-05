@@ -1,5 +1,5 @@
-//! ClearVec is optimized specifically for this use case.
-//! It is a slice that has a cursor that navigates around, which only supports push and clear.
+/// An optimized structure trading off memory for speed.
+/// It is a slice that has a cursor that navigates around, which only supports push and clear.
 
 use std::{marker::PhantomData, mem, ptr::{NonNull, self}};
 
@@ -112,7 +112,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
         self.data[..self.cursor].iter()
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.cursor == 0
     }
 }
