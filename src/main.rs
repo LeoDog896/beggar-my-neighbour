@@ -216,7 +216,7 @@ impl Game {
         }
     }
 
-    fn winner(&self) -> Option<Player> {
+    const fn winner(&self) -> Option<Player> {
         if self.p1.is_empty() {
             Some(Player::P2)
         } else if self.p2.is_empty() {

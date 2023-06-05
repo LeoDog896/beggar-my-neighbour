@@ -3,18 +3,19 @@
 
 use std::{marker::PhantomData, mem, ptr::{NonNull, self}};
 
-struct RawValIter<T> {
+pub struct Drain<'a, T: 'a> {
+    vec: PhantomData<&'a mut Vec<T>>,
     start: *const T,
     end: *const T,
 }
 
-impl<T> RawValIter<T> {
+impl<T> Drain<'_, T> {
     // unsafe to construct because it has no associated lifetimes.
     // This is necessary to store a RawValIter in the same struct as
     // its actual allocation. OK since it's a private implementation
     // detail.
     unsafe fn new(slice: &[T]) -> Self {
-        RawValIter {
+        Self {
             start: slice.as_ptr(),
             end: if slice.is_empty() {
                 // if `len = 0`, then this is not actually allocated memory.
@@ -23,12 +24,13 @@ impl<T> RawValIter<T> {
                 slice.as_ptr()
             } else {
                 slice.as_ptr().add(slice.len())
-            }
+            },
+            vec: PhantomData,
         }
     }
 }
 
-impl<T> Iterator for RawValIter<T> {
+impl<'a, T: 'a> Iterator for Drain<'a, T> {
     type Item = T;
     fn next(&mut self) -> Option<T> {
         if self.start == self.end {
@@ -46,16 +48,6 @@ impl<T> Iterator for RawValIter<T> {
             }
         }
     }
-}
-
-pub struct Drain<'a, T: 'a> {
-    vec: PhantomData<&'a mut Vec<T>>,
-    iter: RawValIter<T>,
-}
-
-impl<'a, T> Iterator for Drain<'a, T> {
-    type Item = T;
-    fn next(&mut self) -> Option<T> { self.iter.next() }
 }
 
 impl<'a, T> Drop for Drain<'a, T> {
@@ -89,14 +81,9 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
 
     pub fn drain(&mut self) -> Drain<T> {
         unsafe {
-            let iter = RawValIter::new(&self.data[..self.cursor]);
-
             self.cursor = 0;
 
-            Drain {
-                iter,
-                vec: PhantomData,
-            }
+            Drain::new(&self.data[..self.cursor])
         }
     }
 
