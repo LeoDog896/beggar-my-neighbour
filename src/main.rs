@@ -209,9 +209,8 @@ impl Game {
                     Player::P2 => &mut self.p1,
                 };
 
-                for card in self.middle.drain(..) {
-                    other_player_deck.push_back(card);
-                }
+                other_player_deck.extend(&self.middle);
+                self.middle.clear();
 
                 self.switch_player();
                 self.penalty = 0;
