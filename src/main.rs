@@ -36,6 +36,17 @@ impl Card {
             Card::Other => 0,
         }
     }
+
+    fn from_char(c: char) -> Card {
+        match c {
+            'A' => Card::Ace,
+            'K' => Card::King,
+            'Q' => Card::Queen,
+            'J' => Card::Jack,
+            '-' => Card::Other,
+            _ => panic!("invalid character in string"),
+        }
+    }
 }
 
 impl Display for Card {
@@ -137,29 +148,9 @@ impl Game {
 
         let split_string: Vec<&str> = string.split('/').collect();
 
-        let p1 = split_string[0]
-            .chars()
-            .map(|c| match c {
-                'A' => Card::Ace,
-                'K' => Card::King,
-                'Q' => Card::Queen,
-                'J' => Card::Jack,
-                '-' => Card::Other,
-                _ => panic!("invalid character in string"),
-            })
-            .collect();
+        let p1 = split_string[0].chars().map(Card::from_char).collect();
 
-        let p2 = split_string[1]
-            .chars()
-            .map(|c| match c {
-                'A' => Card::Ace,
-                'K' => Card::King,
-                'Q' => Card::Queen,
-                'J' => Card::Jack,
-                '-' => Card::Other,
-                _ => panic!("invalid character in string"),
-            })
-            .collect();
+        let p2 = split_string[1].chars().map(Card::from_char).collect();
 
         Game {
             p1,
@@ -280,7 +271,7 @@ impl Display for Game {
 
 impl Debug for Game {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut s = String::with_capacity(DECK_SIZE * 2 + 1);
+        let mut s = String::with_capacity(DECK_SIZE + 4);
 
         for card in &self.p1 {
             s.push_str(&format!("{card}"));
