@@ -1,12 +1,18 @@
 //! implementation of beggar my neighbour card game
 
+mod clearvec;
+
 use clap::{Parser, Subcommand};
+use clearvec::ClearVec;
 use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
 use rayon::prelude::ParallelIterator;
 use std::{
     collections::VecDeque,
     fmt::{Debug, Display},
-    sync::{Mutex, atomic::{AtomicUsize, Ordering}},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Mutex,
+    },
 };
 
 #[macro_use]
@@ -100,7 +106,7 @@ struct Game {
     /// Player 2's deck, as a queue (we add to the back and remove from the front)
     p2: VecDeque<Card>,
     /// The middle pile, as a vec (we only ever add to it)
-    middle: Vec<Card>,
+    middle: ClearVec<Card, DECK_SIZE>,
     current_player: Player,
     penalty: usize,
 }
@@ -128,7 +134,7 @@ impl Game {
         Self {
             p1: p1_queue,
             p2: p2_queue,
-            middle: Vec::with_capacity(DECK_SIZE),
+            middle: ClearVec::new(),
             current_player: Player::P1,
             penalty: 0,
         }
@@ -142,7 +148,7 @@ impl Game {
     }
 
     fn from_string(string: &str) -> Self {
-        let middle: Vec<Card> = Vec::with_capacity(DECK_SIZE);
+        let middle = ClearVec::new();
 
         let current_player = Player::P1;
         let penalty = 0;
@@ -201,7 +207,7 @@ impl Game {
                     Player::P2 => &mut self.p1,
                 };
 
-                other_player_deck.extend(&self.middle);
+                other_player_deck.extend(self.middle.iter());
                 self.middle.clear();
 
                 self.switch_player();
@@ -261,7 +267,7 @@ impl Display for Game {
 
         if !self.middle.is_empty() {
             s.push_str("\nmiddle: ");
-            for card in &self.middle {
+            for card in self.middle.iter() {
                 s.push_str(&format!("{card}"));
             }
         }
@@ -353,13 +359,13 @@ fn main() {
         }
         Commands::Longest => {
             let best_length: AtomicUsize = AtomicUsize::new(0);
-            
+
             rayon::iter::repeat(())
                 .map(|_| Game::random(&mut rng.lock().unwrap()))
                 .for_each(|game| {
                     let mut playable_game = game.clone();
                     let stats = playable_game.play();
-                    
+
                     let length = best_length.load(Ordering::Relaxed);
 
                     if stats.turns > length {
