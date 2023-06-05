@@ -1,5 +1,5 @@
-//! ClearVec is optimized specifically for this use case.
-//! It is a slice that has a cursor that navigates around, which only supports push and clear.
+/// An optimized structure trading off memory for speed.
+/// It is a slice that has a cursor that navigates around, which only supports push and clear.
 
 #[derive(Debug, Clone, Copy)]
 pub struct ClearVec<T: Copy, const N: usize> {
@@ -32,7 +32,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
         self.as_slice().iter()
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.cursor == 0
     }
 }
