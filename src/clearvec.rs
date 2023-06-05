@@ -16,7 +16,11 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
     }
 
     pub fn push(&mut self, value: T) {
-        self.data[self.cursor] = value;
+        // This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
+        debug_assert!(self.cursor < N, "ClearVec is full!");
+        unsafe { 
+            *self.data.get_unchecked_mut(self.cursor) = value 
+        };
         self.cursor += 1;
     }
 
