@@ -27,23 +27,23 @@ enum Card {
 }
 
 impl Card {
-    fn penalty(self) -> usize {
+    const fn penalty(self) -> usize {
         match self {
-            Card::Ace => 4,
-            Card::King => 3,
-            Card::Queen => 2,
-            Card::Jack => 1,
-            Card::Other => 0,
+            Self::Ace => 4,
+            Self::King => 3,
+            Self::Queen => 2,
+            Self::Jack => 1,
+            Self::Other => 0,
         }
     }
 
-    fn from_char(c: char) -> Card {
+    fn from_char(c: char) -> Self {
         match c {
-            'A' => Card::Ace,
-            'K' => Card::King,
-            'Q' => Card::Queen,
-            'J' => Card::Jack,
-            '-' => Card::Other,
+            'A' => Self::Ace,
+            'K' => Self::King,
+            'Q' => Self::Queen,
+            'J' => Self::Jack,
+            '-' => Self::Other,
             _ => panic!("invalid character in string"),
         }
     }
@@ -52,11 +52,11 @@ impl Card {
 impl Display for Card {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            Card::Ace => "A",
-            Card::King => "K",
-            Card::Queen => "Q",
-            Card::Jack => "J",
-            Card::Other => "-",
+            Self::Ace => "A",
+            Self::King => "K",
+            Self::Queen => "Q",
+            Self::Jack => "J",
+            Self::Other => "-",
         };
 
         write!(f, "{s}")
@@ -110,7 +110,7 @@ struct GameStats {
 }
 
 impl Game {
-    fn random(rng: &mut SmallRng) -> Game {
+    fn random(rng: &mut SmallRng) -> Self {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
         deck.shuffle(rng);
@@ -124,7 +124,7 @@ impl Game {
         p1_queue.extend(p1);
         p2_queue.extend(p2);
 
-        Game {
+        Self {
             p1: p1_queue,
             p2: p2_queue,
             middle: Vec::with_capacity(DECK_SIZE),
@@ -140,7 +140,7 @@ impl Game {
         }
     }
 
-    fn from_string(string: &str) -> Game {
+    fn from_string(string: &str) -> Self {
         let middle: Vec<Card> = Vec::with_capacity(DECK_SIZE);
 
         let current_player = Player::P1;
@@ -152,7 +152,7 @@ impl Game {
 
         let p2 = split_string[1].chars().map(Card::from_char).collect();
 
-        Game {
+        Self {
             p1,
             p2,
             middle,
