@@ -71,19 +71,17 @@ impl Display for Card {
 }
 
 fn static_deck() -> [Card; 52] {
-    let mut deck: [Card; 52] = [Card::Other; 52];
-
-    for i in 0..52 {
-        deck[i] = match i {
+    (0..52)
+        .map(|i| match i {
             0..=3 => Card::Ace,
             4..=7 => Card::King,
             8..=11 => Card::Queen,
             12..=15 => Card::Jack,
             _ => Card::Other,
-        };
-    }
-
-    deck
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
 }
 
 lazy_static! {
