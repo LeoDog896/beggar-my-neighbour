@@ -106,8 +106,8 @@ impl Game {
         let mut p1_queue = VecDeque::with_capacity(DECK_SIZE);
         let mut p2_queue = VecDeque::with_capacity(DECK_SIZE);
 
-        p1_queue.append(&mut p1.to_vec().into());
-        p2_queue.append(&mut p2.to_vec().into());
+        p1_queue.extend(p1);
+        p2_queue.extend(p2);
 
         Game {
             p1: p1_queue,
