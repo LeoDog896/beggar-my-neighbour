@@ -2,10 +2,11 @@
 
 use clap::{Parser, Subcommand};
 use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
+use rayon::prelude::ParallelIterator;
 use std::{
     collections::VecDeque,
     fmt::{Debug, Display},
-    sync::Mutex,
+    sync::{Mutex, atomic::{AtomicUsize, Ordering}},
 };
 
 #[macro_use]
@@ -334,10 +335,10 @@ fn detail(game: &mut Game) -> String {
 
 fn main() {
     let args = Args::parse();
-    let mut rng = SmallRng::from_entropy();
+    let rng: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
     match args.command {
         Commands::Random => {
-            println!("{}", detail(&mut Game::random(&mut rng)));
+            println!("{}", detail(&mut Game::random(&mut rng.lock().unwrap())));
         }
         Commands::Deck { deck } => {
             println!("{}", detail(&mut Game::from_string(&deck)));
@@ -351,29 +352,32 @@ fn main() {
             );
         }
         Commands::Longest => {
-            let mut best_length = 0;
+            let best_length: AtomicUsize = AtomicUsize::new(0);
+            
+            rayon::iter::repeat(())
+                .map(|_| Game::random(&mut rng.lock().unwrap()))
+                .for_each(|game| {
+                    let mut playable_game = game.clone();
+                    let stats = playable_game.play();
+                    
+                    let length = best_length.load(Ordering::Relaxed);
 
-            loop {
-                let game = Game::random(&mut rng);
-                let mut playable_game = game.clone();
-                let stats = playable_game.play();
+                    if stats.turns > length {
+                        best_length.store(stats.turns, Ordering::Relaxed);
 
-                if stats.turns > best_length {
-                    best_length = stats.turns;
+                        println!("{game}");
+                        println!("stringified: {game:?}\n");
 
-                    println!("{game}");
-                    println!("stringified: {game:?}\n");
+                        println!(
+                            "winner: {winner:?}",
+                            winner = playable_game.winner().unwrap()
+                        );
+                        println!("turns: {turns}", turns = stats.turns);
+                        println!("tricks: {tricks}", tricks = stats.tricks);
 
-                    println!(
-                        "winner: {winner:?}",
-                        winner = playable_game.winner().unwrap()
-                    );
-                    println!("turns: {turns}", turns = stats.turns);
-                    println!("tricks: {tricks}", tricks = stats.tricks);
-
-                    println!("-------------------");
-                }
-            }
+                        println!("-------------------");
+                    }
+                });
         }
     }
 }
