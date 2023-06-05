@@ -201,7 +201,8 @@ impl Game {
                         Player::P2 => &mut self.p1,
                     };
 
-                    other_player_deck.extend(self.middle.drain());
+                    other_player_deck.push_slice(self.middle.as_slice());
+                    self.middle.clear();
 
                     self.switch_player();
                     self.penalty = 0;

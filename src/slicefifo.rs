@@ -42,6 +42,13 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
         }
     }
 
+    pub fn push_slice(&mut self, slice: &[T]) {
+        debug_assert!(self.len + slice.len() <= N, "SliceFifo::push_slice: slice is too long!");
+        for item in slice {
+            self.push(*item);
+        }
+    }
+
     /// Skips bounds checking. Use with caution!
     pub unsafe fn pop_unchecked(&mut self) -> T {
         let item = self.data.get_unchecked(self.head);
@@ -75,13 +82,5 @@ impl<T: Copy, const N: usize> FromIterator<T> for SliceFifo<T, N> {
             fifo.push(item);
         }
         fifo
-    }
-}
-
-impl<T: Copy, const N: usize> Extend<T> for SliceFifo<T, N> {
-    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        for item in iter {
-            self.push(item);
-        }
     }
 }
