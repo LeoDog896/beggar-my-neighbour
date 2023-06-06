@@ -63,7 +63,7 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
         *item
     }
 
-    pub fn as_slice(&self) -> &[T] {
+    pub fn slice(&self) -> &[T] {
         let tail = (self.head + self.len) % N;
         if self.head <= tail {
             &self.data[self.head..tail]
@@ -73,7 +73,7 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.as_slice().iter()
+        self.slice().iter()
     }
 
     pub const fn is_empty(&self) -> bool {

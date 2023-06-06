@@ -24,7 +24,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
         self.cursor += 1;
     }
 
-    pub fn as_slice(&self) -> &[T] {
+    pub fn slice(&self) -> &[T] {
         &self.data[..self.cursor]
     }
 
@@ -33,7 +33,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.as_slice().iter()
+        self.slice().iter()
     }
 
     pub const fn is_empty(&self) -> bool {

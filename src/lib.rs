@@ -171,41 +171,33 @@ impl Game {
 
         // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
         let card = current_player_deck.pop_unchecked();
+        self.middle.push_unchecked(card);
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
         if card.penalty() > 0 {
             let previous_penalty = self.penalty;
             self.penalty = card.penalty();
-            self.middle.push_unchecked(card);
             self.switch_player();
             return previous_penalty == 0;
         }
 
         match self.penalty {
-            0 => {
-                self.middle.push_unchecked(card);
-                self.switch_player();
-            }
+            0 => self.switch_player(),
             // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
             // from the middle and adds them to the beginning of their deck
             1 => {
-                self.middle.push_unchecked(card);
-
                 let other_player_deck = match self.current_player {
                     Player::P1 => &mut self.p2,
                     Player::P2 => &mut self.p1,
                 };
 
-                other_player_deck.push_slice(self.middle.as_slice());
+                other_player_deck.push_slice(self.middle.slice());
                 self.middle.clear();
 
                 self.switch_player();
                 self.penalty = 0;
             }
-            _ => {
-                self.middle.push_unchecked(card);
-                self.penalty -= 1;
-            }
+            _ => self.penalty -= 1,
         };
 
         false
