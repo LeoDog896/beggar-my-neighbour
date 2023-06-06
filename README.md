@@ -34,7 +34,11 @@ However, in order to step through the game, we need to keep track of the followi
 
 As winning can be determined by this state, we don't need to keep track of the winner.
 
-The decks should be represented as a queue, as we only ever need to add to the bottom and remove from the top.
+The decks should be represented as a FIFO queue, as we only ever need to add to the bottom and remove from the top.
+
+## Multi-game approach
+
+In order to solve multiple games, it runs games based on a random deck with rayon.
 
 ## Perf testing
 
