@@ -19,25 +19,19 @@ extern crate lazy_static;
 #[derive(Debug, Copy, Clone)]
 enum Card {
     /// Penalty card, play 4
-    Ace,
+    Ace = 4,
     /// Penalty card, play 3
-    King,
+    King = 3,
     /// Penalty card, play 2
-    Queen,
+    Queen = 2,
     /// Penalty card, play 1
-    Jack,
-    Other,
+    Jack = 1,
+    Other = 0,
 }
 
 impl Card {
-    const fn penalty(self) -> usize {
-        match self {
-            Self::Ace => 4,
-            Self::King => 3,
-            Self::Queen => 2,
-            Self::Jack => 1,
-            Self::Other => 0,
-        }
+    const fn penalty(self) -> u8 {
+        self as u8
     }
 
     fn from_char(c: char) -> Self {
@@ -102,7 +96,7 @@ pub struct Game {
     /// The middle pile, as a vec (we only ever add to it)
     middle: ClearVec<Card, DECK_SIZE>,
     current_player: Player,
-    penalty: usize,
+    penalty: u8,
 }
 
 #[derive(Debug, Copy, Clone)]
