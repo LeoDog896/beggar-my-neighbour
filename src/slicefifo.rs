@@ -17,12 +17,12 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
     }
 
     /// Get a `SliceFifo` from a slice of length M, where M <= N.
-    pub fn from_slice(slice: &[T]) -> Self {
+    /// 
+    /// It does not make any assumptions in production about the length of the slice.
+    pub unsafe fn from_slice(slice: &[T]) -> Self {
         debug_assert!(slice.len() <= N, "SliceFifo::from_slice: slice is too long!");
         let mut data = [unsafe { std::mem::zeroed() }; N];
-        unsafe {
-            ptr::copy_nonoverlapping(slice.as_ptr(), data.as_mut_ptr(), slice.len());
-        }
+        ptr::copy_nonoverlapping(slice.as_ptr(), data.as_mut_ptr(), slice.len());
         Self {
             head: 0,
             len: slice.len(),
