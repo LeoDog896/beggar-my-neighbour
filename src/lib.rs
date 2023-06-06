@@ -63,8 +63,11 @@ impl Display for Card {
     }
 }
 
-fn static_deck() -> [Card; 52] {
-    (0..52)
+const DECK_SIZE: usize = 52;
+const P_SIZE: usize = DECK_SIZE / 2;
+
+fn static_deck() -> [Card; DECK_SIZE] {
+    (0..DECK_SIZE)
         .map(|i| match i {
             0..=3 => Card::Ace,
             4..=7 => Card::King,
@@ -80,9 +83,6 @@ fn static_deck() -> [Card; 52] {
 lazy_static! {
     static ref STATIC_DECK: Mutex<[Card; 52]> = Mutex::new(static_deck());
 }
-
-const DECK_SIZE: usize = 52;
-const P_SIZE: usize = DECK_SIZE / 2;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Player {
