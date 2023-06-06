@@ -18,6 +18,7 @@ extern crate lazy_static;
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
+#[repr(u8)]
 #[derive(Debug, Copy, Clone)]
 enum Card {
     /// Penalty card, play 4
