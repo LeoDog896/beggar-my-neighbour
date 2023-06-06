@@ -73,8 +73,8 @@ fn main() {
             let best_length: AtomicUsize = AtomicUsize::new(0);
 
             rayon::iter::repeat(())
-                .map(|_| Game::random(&mut *rng.lock().unwrap()))
-                .for_each(|game| {
+                .for_each(|_| {
+                    let game = Game::random(&mut *rng.lock().unwrap());
                     let mut playable_game = game.clone();
                     let stats = playable_game.play();
 
