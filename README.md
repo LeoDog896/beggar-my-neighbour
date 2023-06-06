@@ -59,10 +59,10 @@ cargo flamegraph -- longest
 
 This simulation is running on two machines. If you're running this on a server, do let me know!
 
-- @LeoDog896's dedicated server machine on https://bloom.host
-- @CoasterFan5's server, dedicated pterodactyl node
+- @LeoDog896
+- @CoasterFan5
 
-Longest report:
+Longest report by @CoasterFan5:
 
 ```
 -------------------
