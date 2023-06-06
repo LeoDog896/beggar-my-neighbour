@@ -1,6 +1,6 @@
 //! implementation of beggar my neighbour card game
-#![feature(test)]
-extern crate test;
+// #![feature(test)]
+// extern crate test;
 
 mod clearvec;
 mod slicefifo;
@@ -287,17 +287,17 @@ impl Debug for Game {
 #[cfg(test)]
 mod tests {
     use super::Game;
-    use test::Bencher;
+    // use test::Bencher;
     
-    #[bench]
-    fn bench_run_game(b: &mut Bencher) {
-        b.iter(|| {
-            let record =
-                &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
+    // #[bench]
+    // fn bench_run_game(b: &mut Bencher) {
+    //     b.iter(|| {
+    //         let record =
+    //             &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
 
-            record.play();
-        });
-    }
+    //         record.play();
+    //     });
+    // }
 
     #[test]
     fn world_record_game() {
