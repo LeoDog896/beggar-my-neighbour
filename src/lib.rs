@@ -106,7 +106,10 @@ pub struct GameStats {
 }
 
 impl Game {
-    pub fn random<R>(rng: &mut R) -> Self where R: Rng + ?Sized {
+    pub fn random<R>(rng: &mut R) -> Self
+    where
+        R: Rng + ?Sized,
+    {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
         deck.shuffle(rng);

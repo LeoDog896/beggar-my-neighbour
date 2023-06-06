@@ -1,4 +1,3 @@
-
 use beggar_my_neighbour::Game;
 use clap::{Parser, Subcommand};
 use rand::{rngs::SmallRng, SeedableRng};
