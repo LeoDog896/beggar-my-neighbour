@@ -50,3 +50,12 @@ For a simple visual with flamegraphs:
 ```sh
 cargo flamegraph -- longest
 ```
+
+## Running Machines
+
+This simulation is running on two machines. If you're running this on a server, do let me know!
+
+- @LeoDog896's dedicated server machine on https://bloom.host
+- @CoasterFan5's server, dedicated pterodactyl node
+
+The longest reported has only been ~4.9k, showing there is still room for optimization (most likely algorithm-based, not machine-based)
