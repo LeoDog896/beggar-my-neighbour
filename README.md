@@ -62,4 +62,17 @@ This simulation is running on two machines. If you're running this on a server, 
 - @LeoDog896's dedicated server machine on https://bloom.host
 - @CoasterFan5's server, dedicated pterodactyl node
 
-The longest reported has only been ~4.9k, showing there is still room for optimization (most likely algorithm-based, not machine-based)
+Longest report:
+
+```
+-------------------
+p1: -K---A--A--------Q--JQ----
+p2: K-Q----J-KJ---JQA--A-K----
+stringified: -K---A--A--------Q--JQ----/K-Q----J-KJ---JQA--A-K----
+winner: P2
+turns: 5287
+tricks: 750
+-------------------
+```
+
+There is still room for optimization (most likely algorithm-based, not machine-based)
