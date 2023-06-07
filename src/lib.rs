@@ -60,7 +60,7 @@ impl Display for Card {
     }
 }
 
-const DECK_SIZE: usize = 20;
+const DECK_SIZE: usize = 52;
 const P_SIZE: usize = DECK_SIZE / 2;
 
 fn static_deck() -> [Card; DECK_SIZE] {
