@@ -3,7 +3,7 @@ extern crate test;
 
 #[cfg(test)]
 mod tests {
-    use super::Game;
+    use beggar_my_neighbour::Game;
     use test::Bencher;
     
     #[bench]
