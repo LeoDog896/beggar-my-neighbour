@@ -1,7 +1,4 @@
 //! implementation of beggar my neighbour card game
-#![feature(test)]
-extern crate test;
-
 mod clearvec;
 mod slicefifo;
 
@@ -63,7 +60,7 @@ impl Display for Card {
     }
 }
 
-const DECK_SIZE: usize = 52;
+const DECK_SIZE: usize = 20;
 const P_SIZE: usize = DECK_SIZE / 2;
 
 fn static_deck() -> [Card; DECK_SIZE] {
@@ -81,7 +78,7 @@ fn static_deck() -> [Card; DECK_SIZE] {
 }
 
 lazy_static! {
-    static ref STATIC_DECK: Mutex<[Card; 52]> = Mutex::new(static_deck());
+    static ref STATIC_DECK: Mutex<[Card; DECK_SIZE]> = Mutex::new(static_deck());
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -287,17 +284,6 @@ impl Debug for Game {
 #[cfg(test)]
 mod tests {
     use super::Game;
-    use test::Bencher;
-    
-    #[bench]
-    fn bench_run_game(b: &mut Bencher) {
-        b.iter(|| {
-            let record =
-                &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
-
-            record.play();
-        });
-    }
 
     #[test]
     fn world_record_game() {
