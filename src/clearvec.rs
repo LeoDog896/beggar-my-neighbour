@@ -25,7 +25,9 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
     }
 
     pub fn slice(&self) -> &[T] {
-        &self.data[..self.cursor]
+        unsafe {
+            self.data.get_unchecked(..self.cursor)
+        }
     }
 
     pub fn clear(&mut self) {
