@@ -1,13 +1,10 @@
 use beggar_my_neighbour::Game;
 use clap::{Parser, Subcommand};
-use rand::{rngs::SmallRng, SeedableRng};
+use rand::rngs::ThreadRng;
 use rayon::prelude::ParallelIterator;
 use std::{
     fmt::Debug,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Mutex,
-    },
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
 /// A CLI to play games of beggar my neighbour
@@ -53,10 +50,9 @@ fn detail(game: &mut Game) -> String {
 
 fn main() {
     let args = Args::parse();
-    let rng: Mutex<SmallRng> = Mutex::new(SmallRng::from_entropy());
     match args.command {
         Commands::Random => {
-            println!("{}", detail(&mut Game::random(&mut *rng.lock().unwrap())));
+            println!("{}", detail(&mut Game::random(&mut ThreadRng::default())));
         }
         Commands::Deck { deck } => {
             println!("{}", detail(&mut Game::from_string(&deck)));
@@ -74,7 +70,7 @@ fn main() {
 
             rayon::iter::repeat(())
                 .for_each(|_| {
-                    let game = Game::random(&mut *rng.lock().unwrap());
+                    let game = Game::random(&mut ThreadRng::default());
                     let mut playable_game = game.clone();
                     let stats = playable_game.play();
 
