@@ -29,11 +29,18 @@ enum Commands {
     Longest,
 }
 
-fn detail(game: &mut Game) -> String {
+fn game_header(game: &Game) -> String {
     let mut s = String::new();
 
     s.push_str(&format!("{game}\n"));
     s.push_str(&format!("stringified: {game:?}\n"));
+
+    s
+}
+
+fn detail(game: &mut Game) -> String {
+    let mut s = String::new();
+
     let stats = game.play();
 
     s.push('\n');
@@ -52,46 +59,53 @@ fn main() {
     let args = Args::parse();
     match args.command {
         Commands::Random => {
-            println!("{}", detail(&mut Game::random(&mut ThreadRng::default())));
+            let mut game = Game::random(&mut ThreadRng::default());
+            println!("{}", game_header(&game));
+            println!("{}", detail(&mut game));
         }
         Commands::Deck { deck } => {
-            println!("{}", detail(&mut Game::from_string(&deck)));
+            let mut game = Game::from_string(&deck);
+            println!("{}", game_header(&game));
+            println!("{}", detail(&mut game));
         }
         Commands::Record => {
+            let mut game: &mut Game = &mut Game::from_string(
+                "---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---"
+            );
             println!(
                 "{}",
-                detail(&mut Game::from_string(
-                    "---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---"
-                ))
+                game_header(&game)
+            );
+            println!(
+                "{}",
+                detail(&mut game)
             );
         }
         Commands::Longest => {
             let best_length: AtomicUsize = AtomicUsize::new(0);
 
-            rayon::iter::repeat(())
-                .for_each(|_| {
-                    let game = Game::random(&mut ThreadRng::default());
-                    let mut playable_game = game.clone();
-                    let stats = playable_game.play();
+            rayon::iter::repeat(()).for_each(|_| {
+                let game = Game::random(&mut ThreadRng::default());
+                let mut playable_game = game.clone();
+                let stats = playable_game.play();
 
-                    let length = best_length.load(Ordering::Relaxed);
+                let length = best_length.load(Ordering::Relaxed);
 
-                    if stats.turns > length {
-                        best_length.store(stats.turns, Ordering::Relaxed);
+                if stats.turns > length {
+                    best_length.store(stats.turns, Ordering::Relaxed);
 
-                        println!("{game}");
-                        println!("stringified: {game:?}\n");
+                    println!("{}", game_header(&game));
 
-                        println!(
-                            "winner: {winner:?}",
-                            winner = playable_game.winner().unwrap()
-                        );
-                        println!("turns: {turns}", turns = stats.turns);
-                        println!("tricks: {tricks}", tricks = stats.tricks);
+                    println!(
+                        "winner: {winner:?}",
+                        winner = playable_game.winner().unwrap()
+                    );
+                    println!("turns: {turns}", turns = stats.turns);
+                    println!("tricks: {tricks}", tricks = stats.tricks);
 
-                        println!("-------------------");
-                    }
-                });
+                    println!("-------------------");
+                }
+            });
         }
     }
 }

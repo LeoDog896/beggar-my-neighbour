@@ -1,6 +1,5 @@
 /// An optimized structure trading off memory for speed.
 /// It is a slice that has a cursor that navigates around, which only supports push and clear.
-
 #[derive(Debug, Clone, Copy)]
 pub struct ClearVec<T: Copy, const N: usize> {
     data: [T; N],
@@ -25,9 +24,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
     }
 
     pub fn slice(&self) -> &[T] {
-        unsafe {
-            self.data.get_unchecked(..self.cursor)
-        }
+        unsafe { self.data.get_unchecked(..self.cursor) }
     }
 
     pub fn clear(&mut self) {

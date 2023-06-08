@@ -7,7 +7,7 @@ use rand::{seq::SliceRandom, Rng};
 use slicefifo::SliceFifo;
 use std::{
     fmt::{Debug, Display},
-    sync::Mutex,
+    sync::Mutex
 };
 
 #[macro_use]
@@ -61,7 +61,6 @@ impl Display for Card {
 }
 
 const DECK_SIZE: usize = 52;
-const P_SIZE: usize = DECK_SIZE / 2;
 
 fn static_deck() -> [Card; DECK_SIZE] {
     (0..DECK_SIZE)
@@ -87,7 +86,6 @@ pub enum Player {
     P2,
 }
 
-#[derive(Clone)]
 pub struct Game {
     /// Player 1's deck, as a queue (we add to the back and remove from the front)
     p1: SliceFifo<Card, DECK_SIZE>,
@@ -95,7 +93,7 @@ pub struct Game {
     p2: SliceFifo<Card, DECK_SIZE>,
     /// The middle pile, as a vec (we only ever add to it)
     middle: ClearVec<Card, DECK_SIZE>,
-    current_player: Player,
+    current_player: *mut SliceFifo<Card, DECK_SIZE>,
     penalty: u8,
 }
 
@@ -103,6 +101,20 @@ pub struct Game {
 pub struct GameStats {
     pub turns: usize,
     pub tricks: usize,
+}
+
+impl Clone for Game {
+    fn clone(&self) -> Self {
+        let mut p1 = self.p1.clone();
+
+        Self {
+            p1,
+            p2: self.p2.clone(),
+            middle: self.middle.clone(),
+            current_player: &mut p1,
+            penalty: self.penalty,
+        }
+    }
 }
 
 impl Game {
@@ -114,44 +126,45 @@ impl Game {
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
         deck.shuffle(rng);
 
-        let (p1, p2) = deck.split_at(P_SIZE);
-        debug_assert!(p2.len() == P_SIZE);
+        let (p1, p2) = deck.split_at(DECK_SIZE / 2);
+        debug_assert!(p2.len() == DECK_SIZE / 2);
 
-        unsafe {
-            Self {
-                p1: SliceFifo::from_slice(p1),
-                p2: SliceFifo::from_slice(p2),
-                middle: ClearVec::new(),
-                current_player: Player::P1,
-                penalty: 0,
-            }
+        let mut p1 = unsafe { SliceFifo::from_slice(p1) };
+
+
+        Self {
+            p1,
+            p2: unsafe { SliceFifo::from_slice(p2) },
+            middle: ClearVec::new(),
+            current_player: &mut p1,
+            penalty: 0,
         }
     }
 
     fn switch_player(&mut self) {
-        self.current_player = match self.current_player {
-            Player::P1 => Player::P2,
-            Player::P2 => Player::P1,
-        }
+        // check if current_player is the same as p1
+        self.current_player = if std::ptr::eq(self.current_player, &mut self.p1) {
+            &mut self.p2
+        } else {
+            &mut self.p1
+        };
     }
 
     pub fn from_string(string: &str) -> Self {
         let middle = ClearVec::new();
 
-        let current_player = Player::P1;
         let penalty = 0;
 
         let split_string: Vec<&str> = string.split('/').collect();
 
-        let p1 = split_string[0].chars().map(Card::from_char).collect();
-
+        let mut p1 = split_string[0].chars().map(Card::from_char).collect();
         let p2 = split_string[1].chars().map(Card::from_char).collect();
 
         Self {
             p1,
             p2,
             middle,
-            current_player,
+            current_player: &mut p1,
             penalty,
         }
     }
@@ -161,16 +174,10 @@ impl Game {
     ///
     /// Returns true if there was a trick, false .
     /// This makes the assumption that there is no winner in production.
-    unsafe fn step(&mut self) -> bool {
+    unsafe fn step(&mut self) -> GameStats {
         debug_assert!(self.winner().is_none());
-
-        let current_player_deck = match self.current_player {
-            Player::P1 => &mut self.p1,
-            Player::P2 => &mut self.p2,
-        };
-
         // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
-        let card = current_player_deck.pop_unchecked();
+        let card = (*self.current_player).pop_unchecked();
         self.middle.push_unchecked(card);
 
         // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
@@ -178,7 +185,10 @@ impl Game {
             let previous_penalty = self.penalty;
             self.penalty = card.penalty();
             self.switch_player();
-            return previous_penalty == 0;
+            return GameStats {
+                turns: 1,
+                tricks: if previous_penalty == 0 { 1 } else { 0 },
+            };
         }
 
         match self.penalty {
@@ -186,21 +196,20 @@ impl Game {
             // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
             // from the middle and adds them to the beginning of their deck
             1 => {
-                let other_player_deck = match self.current_player {
-                    Player::P1 => &mut self.p2,
-                    Player::P2 => &mut self.p1,
-                };
+                self.switch_player();
 
-                other_player_deck.push_slice(self.middle.slice());
+                (*self.current_player).push_slice(self.middle.slice());
                 self.middle.clear();
 
-                self.switch_player();
                 self.penalty = 0;
             }
             _ => self.penalty -= 1,
         };
 
-        false
+        GameStats {
+            turns: 1,
+            tricks: 0,
+        }
     }
 
     pub const fn winner(&self) -> Option<Player> {
@@ -218,13 +227,19 @@ impl Game {
         let mut turns = 0;
         let mut tricks = 0;
 
+        // TODO this is a hack. we should probably just drop current_player from struct
+        // since this is a silly raw pointer
+        self.current_player = &mut self.p1;
+
         while self.winner().is_none() {
             unsafe {
-                if self.step() {
-                    tricks += 1;
-                }
+                let GameStats {
+                    turns: new_turns,
+                    tricks: new_tricks,
+                } = self.step();
+                turns += new_turns;
+                tricks += new_tricks;
             }
-            turns += 1;
             if turns > 100_000 {
                 return GameStats { turns, tricks };
             }
