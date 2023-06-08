@@ -1,6 +1,7 @@
 use beggar_my_neighbour::Game;
 use clap::{Parser, Subcommand};
 use rand::rngs::ThreadRng;
+use indoc::printdoc;
 use rayon::prelude::ParallelIterator;
 use std::{
     fmt::Debug,
@@ -26,7 +27,12 @@ enum Commands {
     },
     /// Prints the stats for the longest game
     Record,
-    Longest,
+    Longest {
+        /// How many games to play
+        /// Don't specify if you want to play forever
+        #[arg(short, long)]
+        games: Option<u64>,
+    },
 }
 
 fn game_header(game: &Game) -> String {
@@ -69,22 +75,15 @@ fn main() {
             println!("{}", detail(&mut game));
         }
         Commands::Record => {
-            let mut game: &mut Game = &mut Game::from_string(
-                "---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---"
-            );
-            println!(
-                "{}",
-                game_header(&game)
-            );
-            println!(
-                "{}",
-                detail(&mut game)
-            );
+            let mut game: &mut Game =
+                &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
+            println!("{}", game_header(&game));
+            println!("{}", detail(&mut game));
         }
-        Commands::Longest => {
+        Commands::Longest { games } => {
             let best_length: AtomicUsize = AtomicUsize::new(0);
 
-            rayon::iter::repeat(()).for_each(|_| {
+            let lambda = |_: ()| {
                 let game = Game::random(&mut ThreadRng::default());
                 let mut playable_game = game.clone();
                 let stats = playable_game.play();
@@ -93,19 +92,27 @@ fn main() {
 
                 if stats.turns > length {
                     best_length.store(stats.turns, Ordering::Relaxed);
+                    
+                    printdoc!(
+                        "{header}
 
-                    println!("{}", game_header(&game));
-
-                    println!(
-                        "winner: {winner:?}",
-                        winner = playable_game.winner().unwrap()
+                        winner: {winner:?}
+                        turns: {turns}
+                        tricks: {tricks}
+                        -------------------
+                        ",
+                        winner = playable_game.winner().unwrap(),
+                        turns = stats.turns,
+                        tricks = stats.tricks,
+                        header = game_header(&game),
                     );
-                    println!("turns: {turns}", turns = stats.turns);
-                    println!("tricks: {tricks}", tricks = stats.tricks);
-
-                    println!("-------------------");
                 }
-            });
+            };
+
+            match games {
+                Some(games) => rayon::iter::repeatn((), games as usize).for_each(lambda),
+                None => rayon::iter::repeat(()).for_each(lambda),
+            }
         }
     }
 }

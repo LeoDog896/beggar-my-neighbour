@@ -7,7 +7,7 @@ use rand::{seq::SliceRandom, Rng};
 use slicefifo::SliceFifo;
 use std::{
     fmt::{Debug, Display},
-    sync::Mutex
+    sync::Mutex,
 };
 
 #[macro_use]
@@ -130,7 +130,6 @@ impl Game {
         debug_assert!(p2.len() == DECK_SIZE / 2);
 
         let mut p1 = unsafe { SliceFifo::from_slice(p1) };
-
 
         Self {
             p1,
