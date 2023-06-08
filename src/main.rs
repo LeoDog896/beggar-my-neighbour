@@ -31,7 +31,7 @@ enum Commands {
         /// How many games to play
         /// Don't specify if you want to play forever
         #[arg(short, long)]
-        games: Option<u64>,
+        games: Option<usize>,
     },
 }
 
@@ -110,7 +110,7 @@ fn main() {
             };
 
             match games {
-                Some(games) => rayon::iter::repeatn((), games as usize).for_each(lambda),
+                Some(games) => rayon::iter::repeatn((), games).for_each(lambda),
                 None => rayon::iter::repeat(()).for_each(lambda),
             }
         }
