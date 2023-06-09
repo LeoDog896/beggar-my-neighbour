@@ -121,8 +121,14 @@ impl Game {
             }
         }
 
-        let (p1, p2) = deck.split_at(DECK_SIZE / 2);
-        debug_assert!(p2.len() == DECK_SIZE / 2);
+        let mid = DECK_SIZE / 2;
+
+        // unsafe version of deck.split_at(mid)
+        let (p1, p2) = unsafe {
+            (deck.get_unchecked(..mid), deck.get_unchecked(mid..))
+        };
+
+        debug_assert!(p2.len() == mid);
 
         Self {
             p1: unsafe { CircularBuffer::from_slice(p1) },
@@ -142,11 +148,10 @@ impl Game {
     }
 
     pub fn from_string(string: &str) -> Self {
-        let middle = CursorSlice::new();
-
-        let penalty = 0;
-
         let split_string: Vec<&str> = string.split('/').collect();
+
+        // Replace dual bound checks with a single check
+        assert!(split_string.len() == 2);
 
         let p1 = split_string[0].chars().map(Card::from_char).collect();
         let p2 = split_string[1].chars().map(Card::from_char).collect();
@@ -154,8 +159,8 @@ impl Game {
         Self {
             p1,
             p2,
-            middle,
-            penalty,
+            middle: CursorSlice::new(),
+            penalty: 0,
         }
     }
 
@@ -171,7 +176,9 @@ impl Game {
 
     /// Plays out a game of beggar my neighbour, returning how many steps it took
     pub fn play(&mut self) -> GameStats {
-        let mut turns = 0;
+        // We can't produce a game thats less than 1 turn long
+        // so we can skip some arithmetic
+        let mut turns = 1;
         let mut tricks = 0;
 
         // TODO can we make this safe w/o compromising performance?
@@ -182,7 +189,7 @@ impl Game {
                 // We can return early (len = 1) because regardless of the card played, the game is over
                 if (*current_player).len() == 1 {
                     break GameStats {
-                        turns: turns + 1,
+                        turns,
                         tricks,
                     }
                 }
@@ -190,8 +197,8 @@ impl Game {
                 // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
                 // *unless current_player.len() == 0, which is impossible we only remove 1 card at a time
                 let card = (*current_player).pop_unchecked();
-
                 self.middle.push_unchecked(card);
+                turns += 1;
 
                 // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
                 if card.penalty() > 0 {
@@ -200,7 +207,6 @@ impl Game {
                     }
                     self.penalty = card.penalty();
                     current_player = self.switch_player(current_player);
-                    turns += 1;
                     continue;
                 }
 
@@ -218,8 +224,6 @@ impl Game {
                     }
                     _ => self.penalty -= 1,
                 };
-
-                turns += 1;
             }
             if turns > 100_000 {
                 break GameStats { turns, tricks };

@@ -24,7 +24,7 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
             slice.len() <= N,
             "SliceFifo::from_slice: slice is too long!"
         );
-        let mut data = [unsafe { std::mem::zeroed() }; N];
+        let mut data = [std::mem::zeroed(); N];
         ptr::copy_nonoverlapping(slice.as_ptr(), data.as_mut_ptr(), slice.len());
         Self {
             head: 0,
@@ -35,6 +35,7 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
 
     pub fn push(&mut self, item: T) {
         let tail = (self.head + self.len) % N;
+        // This is safe because we know that the length of the slice is less than N (because of % N)
         unsafe {
             *self.data.get_unchecked_mut(tail) = item;
         }
@@ -55,7 +56,7 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
         }
     }
 
-    /// Skips bounds checking. Use with caution!
+    /// Skips bounds checking. If the buffer is empty, this will be UB.
     pub unsafe fn pop_unchecked(&mut self) -> T {
         let item = self.data.get_unchecked(self.head);
         self.head = (self.head + 1) % N;
