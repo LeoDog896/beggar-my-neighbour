@@ -165,12 +165,12 @@ impl Game {
         let mut turns = 0;
         let mut tricks = 0;
 
-        // TODO this is a hack. we should probably just drop current_player from struct
-        // since this is a silly raw pointer
-        let mut current_player: *mut SliceFifo<Card, 52> = &mut self.p1;
+        // TODO can we make this safe w/o compromising performance?
+        let mut current_player: *mut SliceFifo<Card, DECK_SIZE> = &mut self.p1;
 
         loop {
             unsafe {
+                // We can return early (len = 1) because regardless of the card played, the game is over
                 if (*current_player).len() == 1 {
                     break GameStats {
                         turns: turns + 1,
@@ -179,6 +179,7 @@ impl Game {
                 }
 
                 // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
+                // *unless current_player.len() == 0, which is impossible we only remove 1 card at a time
                 let card = (*current_player).pop_unchecked();
 
                 self.middle.push_unchecked(card);
