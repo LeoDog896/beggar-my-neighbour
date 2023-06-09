@@ -33,20 +33,18 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
         }
     }
 
-    pub fn push(&mut self, item: T) {
+    pub unsafe fn push(&mut self, item: T) {
         let tail = (self.head + self.len) % N;
         // This is safe because we know that the length of the slice is less than N (because of % N)
         unsafe {
             *self.data.get_unchecked_mut(tail) = item;
         }
-        if self.len == N {
-            self.head = (self.head + 1) % N;
-        } else {
-            self.len += 1;
-        }
+
+        // But this is not safe, because we don't know if the slice is full or not
+        self.len += 1;
     }
 
-    pub fn push_slice(&mut self, slice: &[T]) {
+    pub unsafe fn push_slice(&mut self, slice: &[T]) {
         debug_assert!(
             self.len + slice.len() <= N,
             "SliceFifo::push_slice: slice is too long!"
@@ -86,7 +84,9 @@ impl<T: Copy, const N: usize> FromIterator<T> for CircularBuffer<T, N> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut fifo = Self::new();
         for item in iter {
-            fifo.push(item);
+            unsafe {
+                fifo.push(item);
+            }
         }
         fifo
     }
