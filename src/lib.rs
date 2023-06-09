@@ -3,11 +3,11 @@ mod cursorslice;
 mod circlebuffer;
 
 use cursorslice::CursorSlice;
-use rand::{seq::SliceRandom, Rng};
+use rand::Rng;
 use circlebuffer::CircularBuffer;
 use std::{
     fmt::{Debug, Display},
-    sync::Mutex,
+    sync::Mutex, ptr,
 };
 
 #[macro_use]
@@ -110,7 +110,16 @@ impl Game {
     {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
-        deck.shuffle(rng);
+
+        // unsafe version of deck.shuffle(rng)
+        for i in (1..deck.len()).rev() {
+            unsafe {
+                ptr::swap(
+                    deck.get_unchecked_mut(i),
+                    deck.get_unchecked_mut(rng.gen_range(0..=i)),
+                );
+            }
+        }
 
         let (p1, p2) = deck.split_at(DECK_SIZE / 2);
         debug_assert!(p2.len() == DECK_SIZE / 2);
