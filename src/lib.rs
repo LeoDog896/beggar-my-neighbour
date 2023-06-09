@@ -105,12 +105,12 @@ pub struct GameStats {
 
 impl Clone for Game {
     fn clone(&self) -> Self {
-        let mut p1 = self.p1.clone();
+        let mut p1 = self.p1;
 
         Self {
             p1,
-            p2: self.p2.clone(),
-            middle: self.middle.clone(),
+            p2: self.p2,
+            middle: self.middle,
             current_player: &mut p1,
             penalty: self.penalty,
         }
@@ -142,7 +142,7 @@ impl Game {
 
     fn switch_player(&mut self) {
         // check if current_player is the same as p1
-        self.current_player = if std::ptr::eq(self.current_player, &mut self.p1) {
+        self.current_player = if std::ptr::eq(self.current_player, &self.p1) {
             &mut self.p2
         } else {
             &mut self.p1

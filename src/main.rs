@@ -75,10 +75,10 @@ fn main() {
             println!("{}", detail(&mut game));
         }
         Commands::Record => {
-            let mut game: &mut Game =
+            let game: &mut Game =
                 &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
-            println!("{}", game_header(&game));
-            println!("{}", detail(&mut game));
+            println!("{}", game_header(game));
+            println!("{}", detail(game));
         }
         Commands::Longest { games } => {
             let best_length: AtomicUsize = AtomicUsize::new(0);
