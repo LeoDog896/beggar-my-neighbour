@@ -36,9 +36,7 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
     pub unsafe fn push(&mut self, item: T) {
         let tail = (self.head + self.len) % N;
         // This is safe because we know that the length of the slice is less than N (because of % N)
-        unsafe {
-            *self.data.get_unchecked_mut(tail) = item;
-        }
+        *self.data.get_unchecked_mut(tail) = item;
 
         // But this is not safe, because we don't know if the slice is full or not
         self.len += 1;
@@ -49,9 +47,23 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
             self.len + slice.len() <= N,
             "SliceFifo::push_slice: slice is too long!"
         );
-        for item in slice {
-            self.push(*item);
+
+        debug_assert!(
+            slice.len() > 0,
+            "SliceFifo::push_slice: slice is empty!"
+        );
+
+        let tail = (self.head + self.len) % N;
+        if slice.len() > N - tail {
+            // We need to split the slice into two parts (unsafe mode)
+            let (first, second) = (slice.get_unchecked(..N - tail), slice.get_unchecked(N - tail..));
+            ptr::copy_nonoverlapping(first.as_ptr(), self.data.as_mut_ptr().add(tail), first.len());
+            ptr::copy_nonoverlapping(second.as_ptr(), self.data.as_mut_ptr(), second.len());
+        } else {
+            // We can just copy the slice into the buffer
+            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());
         }
+        self.len += slice.len();
     }
 
     /// Skips bounds checking. If the buffer is empty, this will be UB.
