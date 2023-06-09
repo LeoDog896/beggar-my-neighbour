@@ -151,9 +151,9 @@ impl Game {
     }
 
     pub const fn winner(&self) -> Option<Player> {
-        if self.p1.is_empty() {
+        if self.p1.len() == 1 {
             Some(Player::P2)
-        } else if self.p2.is_empty() {
+        } else if self.p2.len() == 1 {
             Some(Player::P1)
         } else {
             None
@@ -171,27 +171,26 @@ impl Game {
 
         loop {
             unsafe {
-                // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
-                let card = (*current_player).pop_unchecked();
-
-                if (*current_player).is_empty() {
+                if (*current_player).len() == 1 {
                     break GameStats {
                         turns: turns + 1,
                         tricks,
                     }
                 }
 
+                // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
+                let card = (*current_player).pop_unchecked();
+
                 self.middle.push_unchecked(card);
 
                 // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
                 if card.penalty() > 0 {
-                    let previous_penalty = self.penalty;
+                    if self.penalty == 0 {
+                        tricks += 1;
+                    }
                     self.penalty = card.penalty();
                     current_player = self.switch_player(current_player);
                     turns += 1;
-                    if previous_penalty == 0 {
-                        tricks += 1;
-                    }
                     continue;
                 }
 
@@ -270,14 +269,19 @@ impl Debug for Game {
 mod tests {
     use super::Game;
 
+    fn assert_game(game: &str, turns: usize, tricks: usize) {
+        let game = &mut Game::from_string(game);
+
+        let stats = game.play();
+
+        assert_eq!(stats.turns, turns);
+        assert_eq!(stats.tricks, tricks);
+    }
+
     #[test]
-    fn world_record_game() {
-        let record =
-            &mut Game::from_string("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---");
-
-        let stats = record.play();
-
-        assert_eq!(stats.turns, 8_344);
-        assert_eq!(stats.tricks, 1_164);
+    fn world_record_games() {
+        assert_game("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---", 8_344, 1_164);
+        assert_game("K-KK----K-A-----JAA--Q--J-/---Q---Q-J-----J------AQ--", 7_157, 1_007);
+        assert_game("A-QK------Q----KA-----J---/-JAK----A--Q----J---QJ--K-", 6_913, 960)
     }
 }

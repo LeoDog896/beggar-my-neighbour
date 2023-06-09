@@ -76,8 +76,8 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
         self.slice().iter()
     }
 
-    pub const fn is_empty(&self) -> bool {
-        self.len == 0
+    pub const fn len(&self) -> usize {
+        self.len
     }
 }
 
