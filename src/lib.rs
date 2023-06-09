@@ -1,10 +1,10 @@
 //! implementation of beggar my neighbour card game
-mod clearvec;
-mod slicefifo;
+mod cursorslice;
+mod circlebuffer;
 
-use clearvec::ClearVec;
+use cursorslice::CursorSlice;
 use rand::{seq::SliceRandom, Rng};
-use slicefifo::SliceFifo;
+use circlebuffer::CircularBuffer;
 use std::{
     fmt::{Debug, Display},
     sync::Mutex,
@@ -89,11 +89,11 @@ pub enum Player {
 #[derive(Clone)]
 pub struct Game {
     /// Player 1's deck, as a queue (we add to the back and remove from the front)
-    p1: SliceFifo<Card, DECK_SIZE>,
+    p1: CircularBuffer<Card, DECK_SIZE>,
     /// Player 2's deck, as a queue (we add to the back and remove from the front)
-    p2: SliceFifo<Card, DECK_SIZE>,
+    p2: CircularBuffer<Card, DECK_SIZE>,
     /// The middle pile, as a vec (we only ever add to it)
-    middle: ClearVec<Card, DECK_SIZE>,
+    middle: CursorSlice<Card, DECK_SIZE>,
     penalty: u8,
 }
 
@@ -116,14 +116,14 @@ impl Game {
         debug_assert!(p2.len() == DECK_SIZE / 2);
 
         Self {
-            p1: unsafe { SliceFifo::from_slice(p1) },
-            p2: unsafe { SliceFifo::from_slice(p2) },
-            middle: ClearVec::new(),
+            p1: unsafe { CircularBuffer::from_slice(p1) },
+            p2: unsafe { CircularBuffer::from_slice(p2) },
+            middle: CursorSlice::new(),
             penalty: 0,
         }
     }
 
-    fn switch_player(&mut self, ptr: *mut SliceFifo<Card, DECK_SIZE>) -> *mut SliceFifo<Card, DECK_SIZE> {
+    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card, DECK_SIZE>) -> *mut CircularBuffer<Card, DECK_SIZE> {
         // check if current_player is the same as p1
         if std::ptr::eq(ptr, &self.p1) {
             &mut self.p2
@@ -133,7 +133,7 @@ impl Game {
     }
 
     pub fn from_string(string: &str) -> Self {
-        let middle = ClearVec::new();
+        let middle = CursorSlice::new();
 
         let penalty = 0;
 
@@ -166,7 +166,7 @@ impl Game {
         let mut tricks = 0;
 
         // TODO can we make this safe w/o compromising performance?
-        let mut current_player: *mut SliceFifo<Card, DECK_SIZE> = &mut self.p1;
+        let mut current_player: *mut CircularBuffer<Card, DECK_SIZE> = &mut self.p1;
 
         loop {
             unsafe {

@@ -1,13 +1,13 @@
 use std::ptr;
 
 #[derive(Debug, Clone, Copy)]
-pub struct SliceFifo<T, const N: usize> {
+pub struct CircularBuffer<T, const N: usize> {
     head: usize,
     len: usize,
     data: [T; N],
 }
 
-impl<T: Copy, const N: usize> SliceFifo<T, N> {
+impl<T: Copy, const N: usize> CircularBuffer<T, N> {
     pub fn new() -> Self {
         Self {
             head: 0,
@@ -81,7 +81,7 @@ impl<T: Copy, const N: usize> SliceFifo<T, N> {
     }
 }
 
-impl<T: Copy, const N: usize> FromIterator<T> for SliceFifo<T, N> {
+impl<T: Copy, const N: usize> FromIterator<T> for CircularBuffer<T, N> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let mut fifo = Self::new();
         for item in iter {

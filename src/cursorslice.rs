@@ -1,12 +1,12 @@
 /// An optimized structure trading off memory for speed.
 /// It is a slice that has a cursor that navigates around, which only supports push and clear.
 #[derive(Debug, Clone, Copy)]
-pub struct ClearVec<T: Copy, const N: usize> {
+pub struct CursorSlice<T: Copy, const N: usize> {
     data: [T; N],
     cursor: usize,
 }
 
-impl<T: Copy, const N: usize> ClearVec<T, N> {
+impl<T: Copy, const N: usize> CursorSlice<T, N> {
     pub fn new() -> Self {
         Self {
             data: [unsafe { std::mem::zeroed() }; N],
@@ -16,7 +16,7 @@ impl<T: Copy, const N: usize> ClearVec<T, N> {
 
     pub unsafe fn push_unchecked(&mut self, value: T) {
         // This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
-        debug_assert!(self.cursor < N, "ClearVec is full!");
+        debug_assert!(self.cursor < N, "CursorSlice is full!");
         unsafe {
             *self.data.get_unchecked_mut(self.cursor) = value;
         };
