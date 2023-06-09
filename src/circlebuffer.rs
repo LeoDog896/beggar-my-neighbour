@@ -49,16 +49,15 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
         );
 
         debug_assert!(
-            slice.len() > 0,
+            !slice.is_empty(),
             "SliceFifo::push_slice: slice is empty!"
         );
 
         let tail = (self.head + self.len) % N;
         if slice.len() > N - tail {
             // We need to split the slice into two parts (unsafe mode)
-            let (first, second) = (slice.get_unchecked(..N - tail), slice.get_unchecked(N - tail..));
-            ptr::copy_nonoverlapping(first.as_ptr(), self.data.as_mut_ptr().add(tail), first.len());
-            ptr::copy_nonoverlapping(second.as_ptr(), self.data.as_mut_ptr(), second.len());
+            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), N - tail);
+            ptr::copy_nonoverlapping(slice.as_ptr().add(N - tail), self.data.as_mut_ptr(), slice.len() - (N - tail));
         } else {
             // We can just copy the slice into the buffer
             ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());

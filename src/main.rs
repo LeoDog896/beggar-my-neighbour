@@ -61,6 +61,32 @@ fn detail(game: &mut Game) -> String {
     s
 }
 
+fn random_game(best_length: &AtomicUsize) {
+    let game = Game::random(&mut ThreadRng::default());
+    let mut playable_game = game.clone();
+    let stats = playable_game.play();
+
+    let length = best_length.load(Ordering::Relaxed);
+
+    if stats.turns > length {
+        best_length.store(stats.turns, Ordering::Relaxed);
+        
+        printdoc!(
+            "{header}
+
+            winner: {winner:?}
+            turns: {turns}
+            tricks: {tricks}
+            -------------------
+            ",
+            winner = playable_game.winner().unwrap(),
+            turns = stats.turns,
+            tricks = stats.tricks,
+            header = game_header(&game),
+        );
+    }
+}
+
 fn main() {
     let args = Args::parse();
     match args.command {
@@ -81,37 +107,20 @@ fn main() {
             println!("{}", detail(game));
         }
         Commands::Longest { games } => {
-            let best_length: AtomicUsize = AtomicUsize::new(0);
-
-            let lambda = |_: ()| {
-                let game = Game::random(&mut ThreadRng::default());
-                let mut playable_game = game.clone();
-                let stats = playable_game.play();
-
-                let length = best_length.load(Ordering::Relaxed);
-
-                if stats.turns > length {
-                    best_length.store(stats.turns, Ordering::Relaxed);
-                    
-                    printdoc!(
-                        "{header}
-
-                        winner: {winner:?}
-                        turns: {turns}
-                        tricks: {tricks}
-                        -------------------
-                        ",
-                        winner = playable_game.winner().unwrap(),
-                        turns = stats.turns,
-                        tricks = stats.tricks,
-                        header = game_header(&game),
-                    );
-                }
-            };
-
-            match games {
-                Some(games) => rayon::iter::repeatn((), games).for_each(lambda),
-                None => rayon::iter::repeat(()).for_each(lambda),
+            let best_length = AtomicUsize::new(0);
+            
+            if let Some(games) = games {
+                let games_played = AtomicUsize::new(0);
+                rayon::iter::repeat(()).for_each(|_| {
+                    random_game(&best_length);
+    
+                    let games_played = games_played.fetch_add(1, Ordering::Relaxed);
+                    if games_played >= games {
+                        std::process::exit(0);
+                    }
+                });
+            } else {
+                rayon::iter::repeat(()).for_each(|_| random_game(&best_length));
             }
         }
     }
