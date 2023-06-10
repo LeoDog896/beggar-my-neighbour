@@ -30,6 +30,7 @@ enum Card {
 }
 
 impl Card {
+    #[inline(always)]
     const fn penalty(self) -> u8 {
         self as u8
     }
