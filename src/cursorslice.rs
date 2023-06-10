@@ -14,12 +14,10 @@ impl<T: Copy, const N: usize> CursorSlice<T, N> {
         }
     }
 
+    /// This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
     pub unsafe fn push_unchecked(&mut self, value: T) {
-        // This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
         debug_assert!(self.cursor < N, "CursorSlice is full!");
-        unsafe {
-            *self.data.get_unchecked_mut(self.cursor) = value;
-        };
+        *self.data.get_unchecked_mut(self.cursor) = value;
         self.cursor += 1;
     }
 
