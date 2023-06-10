@@ -68,8 +68,11 @@ fn random_game(best_length: &AtomicUsize) {
 
     let length = best_length.load(Ordering::Relaxed);
 
-    if stats.turns > length {
-        best_length.store(stats.turns, Ordering::Relaxed);
+    if stats.turns > 5000 {
+        if stats.turns > length {
+            best_length.store(stats.turns, Ordering::Relaxed);
+            println!("new record: {}", stats.turns);
+        }
         
         printdoc!(
             "{header}
