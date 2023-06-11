@@ -16,19 +16,19 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
         }
     }
 
-    /// Get a `SliceFifo` from a slice of length M, where M <= N.
+    /// Get a `SliceFifo` from a pointer to a slice of length M, where M <= N.
     ///
     /// It does not make any assumptions in production about the length of the slice.
-    pub unsafe fn from_slice(slice: &[T]) -> Self {
+    pub unsafe fn from_memory(source: *const T, len: usize) -> Self {
         debug_assert!(
-            slice.len() <= N,
+            len <= N,
             "SliceFifo::from_slice: slice is too long!"
         );
         let mut data = [std::mem::zeroed(); N];
-        ptr::copy_nonoverlapping(slice.as_ptr(), data.as_mut_ptr(), slice.len());
+        ptr::copy_nonoverlapping(source, data.as_mut_ptr(), len);
         Self {
             head: 0,
-            len: slice.len(),
+            len,
             data,
         }
     }
@@ -68,7 +68,11 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
     /// Skips bounds checking. If the buffer is empty, this will be UB.
     pub unsafe fn pop_unchecked(&mut self) -> T {
         let item = self.data.get_unchecked(self.head);
-        self.head = (self.head + 1) % N;
+        if self.head == N - 1 {
+            self.head = 0;
+        } else {
+            self.head += 1;
+        }
         self.len -= 1;
         *item
     }
