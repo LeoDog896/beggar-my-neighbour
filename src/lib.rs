@@ -3,7 +3,6 @@ mod cursorslice;
 mod circlebuffer;
 
 use cursorslice::CursorSlice;
-use rand::{Rng, thread_rng};
 use circlebuffer::CircularBuffer;
 use std::{
     fmt::{Debug, Display}, ptr
@@ -72,14 +71,12 @@ fn random_deck() -> [Card; DECK_SIZE] {
         }
     }
 
-    let mut rng = thread_rng();
-
     // unsafe version of deck.shuffle(rng)
     for i in (1..deck.len()).rev() {
         unsafe {
             ptr::swap(
                 deck.get_unchecked_mut(i),
-                deck.get_unchecked_mut(rng.gen_range(0..i)),
+                deck.get_unchecked_mut(fastrand::usize(0..=i)),
             );
         }
     }
