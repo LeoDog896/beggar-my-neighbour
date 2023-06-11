@@ -6,12 +6,8 @@ use cursorslice::CursorSlice;
 use rand::{Rng, distributions::Uniform};
 use circlebuffer::CircularBuffer;
 use std::{
-    fmt::{Debug, Display},
-    sync::Mutex, ptr,
+    fmt::{Debug, Display}, ptr
 };
-
-#[macro_use]
-extern crate lazy_static;
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
@@ -77,10 +73,6 @@ fn static_deck() -> [Card; DECK_SIZE] {
         .unwrap()
 }
 
-lazy_static! {
-    static ref STATIC_DECK: Mutex<[Card; DECK_SIZE]> = Mutex::new(static_deck());
-}
-
 #[derive(Debug, Copy, Clone)]
 pub enum Player {
     P1,
@@ -110,7 +102,7 @@ impl Game {
         R: Rng + ?Sized,
     {
         // We can just shuffle the original deck since it will be re-shuffled every time
-        let mut deck: [Card; DECK_SIZE] = *STATIC_DECK.lock().unwrap();
+        let mut deck: [Card; DECK_SIZE] = static_deck();
 
         let card = Uniform::new(0, DECK_SIZE);
 
