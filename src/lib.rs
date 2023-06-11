@@ -92,9 +92,9 @@ pub enum Player {
 #[derive(Clone)]
 pub struct Game {
     /// Player 1's deck, as a queue (we add to the back and remove from the front)
-    p1: CircularBuffer<Card, DECK_SIZE>,
+    p1: CircularBuffer<Card, 64>,
     /// Player 2's deck, as a queue (we add to the back and remove from the front)
-    p2: CircularBuffer<Card, DECK_SIZE>,
+    p2: CircularBuffer<Card, 64>,
     /// The middle pile, as a vec (we only ever add to it)
     middle: CursorSlice<Card, DECK_SIZE>,
     penalty: u8,
@@ -111,17 +111,17 @@ impl Game {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let deck: [Card; DECK_SIZE] = random_deck();
 
-        let mid = DECK_SIZE / 2;
+        static MID: usize = DECK_SIZE / 2;
 
         Self {
-            p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), mid) },
-            p2: unsafe { CircularBuffer::from_memory(deck.as_ptr().add(mid), mid) },
+            p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), MID) },
+            p2: unsafe { CircularBuffer::from_memory(deck.as_ptr().add(MID), MID) },
             middle: CursorSlice::new(),
             penalty: 0,
         }
     }
 
-    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card, DECK_SIZE>) -> *mut CircularBuffer<Card, DECK_SIZE> {
+    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card, 64>) -> *mut CircularBuffer<Card, 64> {
         // check if current_player is the same as p1
         if std::ptr::eq(ptr, &self.p1) {
             &mut self.p2
@@ -165,7 +165,7 @@ impl Game {
         let mut tricks = 0;
 
         // TODO can we make this safe w/o compromising performance?
-        let mut current_player: *mut CircularBuffer<Card, DECK_SIZE> = &mut self.p1;
+        let mut current_player: *mut CircularBuffer<Card, 64> = &mut self.p1;
 
         loop {
             unsafe {

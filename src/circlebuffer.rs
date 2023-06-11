@@ -34,7 +34,9 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
     }
 
     pub unsafe fn push(&mut self, item: T) {
-        let tail = (self.head + self.len) % N;
+        // We use a bitwise operator where N is a power of 2
+        let tail = (self.head + self.len) & (N - 1);
+
         // This is safe because we know that the length of the slice is less than N (because of % N)
         *self.data.get_unchecked_mut(tail) = item;
 
@@ -53,7 +55,8 @@ impl<T: Copy, const N: usize> CircularBuffer<T, N> {
             "SliceFifo::push_slice: slice is empty!"
         );
 
-        let tail = (self.head + self.len) % N;
+        // We use a bitwise operator where N is a power of 2
+        let tail = (self.head + self.len) & (N - 1);
         if slice.len() > N - tail {
             // We need to split the slice into two parts (unsafe mode)
             ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), N - tail);
