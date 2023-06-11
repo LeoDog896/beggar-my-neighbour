@@ -84,9 +84,10 @@ fn random_deck() -> [Card; DECK_SIZE] {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum Player {
+pub enum Winner {
     P1,
     P2,
+    Infinite
 }
 
 #[derive(Clone)]
@@ -147,13 +148,13 @@ impl Game {
         }
     }
 
-    pub const fn winner(&self) -> Option<Player> {
+    pub const fn winner(&self) -> Winner {
         if self.p1.len() == 1 {
-            Some(Player::P2)
+            Winner::P2
         } else if self.p2.len() == 1 {
-            Some(Player::P1)
+            Winner::P1
         } else {
-            None
+            Winner::Infinite
         }
     }
 

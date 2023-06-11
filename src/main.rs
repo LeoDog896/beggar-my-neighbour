@@ -52,7 +52,7 @@ fn detail(game: &mut Game) -> String {
 
     s.push_str(&format!(
         "winner: {winner:?}\n",
-        winner = game.winner().unwrap()
+        winner = game.winner()
     ));
     s.push_str(&format!("turns: {turns}\n", turns = stats.turns));
     s.push_str(&format!("tricks: {tricks}\n", tricks = stats.tricks));
@@ -77,7 +77,7 @@ fn random_game(best_length: &AtomicUsize) {
             tricks: {tricks}
             -------------------
             ",
-            winner = playable_game.winner().unwrap(),
+            winner = playable_game.winner(),
             turns = stats.turns,
             tricks = stats.tricks,
             header = game_header(&game),
