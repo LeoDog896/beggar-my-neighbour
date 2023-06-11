@@ -60,17 +60,19 @@ impl Display for Card {
 const DECK_SIZE: usize = 52;
 
 fn static_deck() -> [Card; DECK_SIZE] {
-    (0..DECK_SIZE)
-        .map(|i| match i {
+    let mut deck = [Card::Other; DECK_SIZE];
+
+    for (i, card) in deck.iter_mut().enumerate() {
+        *card = match i {
             0..=3 => Card::Ace,
             4..=7 => Card::King,
             8..=11 => Card::Queen,
             12..=15 => Card::Jack,
             _ => Card::Other,
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap()
+        }
+    }
+
+    deck
 }
 
 #[derive(Debug, Copy, Clone)]
