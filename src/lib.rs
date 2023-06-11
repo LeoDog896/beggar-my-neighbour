@@ -111,7 +111,7 @@ impl Game {
         // We can just shuffle the original deck since it will be re-shuffled every time
         let deck: [Card; DECK_SIZE] = random_deck();
 
-        static MID: usize = DECK_SIZE / 2;
+        const MID: usize = DECK_SIZE / 2;
 
         Self {
             p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), MID) },
