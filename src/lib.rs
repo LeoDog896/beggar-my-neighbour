@@ -70,8 +70,7 @@ fn random_deck() -> [Card; DECK_SIZE] {
             _ => Card::Other,
         }
     }
-
-    // unsafe version of deck.shuffle(rng)
+    
     for i in (1..deck.len()).rev() {
         unsafe {
             ptr::swap(
