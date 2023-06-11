@@ -1,6 +1,5 @@
 use beggar_my_neighbour::Game;
 use clap::{Parser, Subcommand};
-use rand::rngs::ThreadRng;
 use indoc::printdoc;
 use rayon::prelude::ParallelIterator;
 use std::{
@@ -62,18 +61,14 @@ fn detail(game: &mut Game) -> String {
 }
 
 fn random_game(best_length: &AtomicUsize) {
-    let game = Game::random(&mut ThreadRng::default());
+    let game = Game::random();
     let mut playable_game = game.clone();
     let stats = playable_game.play();
 
     let length = best_length.load(Ordering::Relaxed);
 
-    if stats.turns > 5000 {
-        if stats.turns > length {
-            best_length.store(stats.turns, Ordering::Relaxed);
-            println!("new record: {}", stats.turns);
-        }
-        
+    if stats.turns > length {
+        best_length.store(stats.turns, Ordering::Relaxed);
         printdoc!(
             "{header}
 
@@ -87,6 +82,7 @@ fn random_game(best_length: &AtomicUsize) {
             tricks = stats.tricks,
             header = game_header(&game),
         );
+
     }
 }
 
@@ -94,7 +90,7 @@ fn main() {
     let args = Args::parse();
     match args.command {
         Commands::Random => {
-            let mut game = Game::random(&mut ThreadRng::default());
+            let mut game = Game::random();
             println!("{}", game_header(&game));
             println!("{}", detail(&mut game));
         }

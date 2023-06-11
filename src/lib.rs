@@ -3,7 +3,7 @@ mod cursorslice;
 mod circlebuffer;
 
 use cursorslice::CursorSlice;
-use rand::{Rng, distributions::Uniform};
+use rand::{Rng, thread_rng};
 use circlebuffer::CircularBuffer;
 use std::{
     fmt::{Debug, Display}, ptr
@@ -59,7 +59,7 @@ impl Display for Card {
 
 const DECK_SIZE: usize = 52;
 
-fn static_deck() -> [Card; DECK_SIZE] {
+fn random_deck() -> [Card; DECK_SIZE] {
     let mut deck = [Card::Other; DECK_SIZE];
 
     for (i, card) in deck.iter_mut().enumerate() {
@@ -69,6 +69,18 @@ fn static_deck() -> [Card; DECK_SIZE] {
             8..=11 => Card::Queen,
             12..=15 => Card::Jack,
             _ => Card::Other,
+        }
+    }
+
+    let mut rng = thread_rng();
+
+    // unsafe version of deck.shuffle(rng)
+    for i in (1..deck.len()).rev() {
+        unsafe {
+            ptr::swap(
+                deck.get_unchecked_mut(i),
+                deck.get_unchecked_mut(rng.gen_range(0..i)),
+            );
         }
     }
 
@@ -99,24 +111,9 @@ pub struct GameStats {
 }
 
 impl Game {
-    pub fn random<R>(rng: &mut R) -> Self
-    where
-        R: Rng + ?Sized,
-    {
+    pub fn random() -> Self {
         // We can just shuffle the original deck since it will be re-shuffled every time
-        let mut deck: [Card; DECK_SIZE] = static_deck();
-
-        let card = Uniform::new(0, DECK_SIZE);
-
-        // unsafe version of deck.shuffle(rng)
-        for i in deck.len()..1 {
-            unsafe {
-                ptr::swap(
-                    deck.get_unchecked_mut(i),
-                    deck.get_unchecked_mut(rng.sample(card))
-                );
-            }
-        }
+        let deck: [Card; DECK_SIZE] = random_deck();
 
         let mid = DECK_SIZE / 2;
 
