@@ -109,10 +109,10 @@ pub struct GameStats {
 
 impl Game {
     pub fn random() -> Self {
+        const MID: usize = DECK_SIZE / 2;
+
         // We can just shuffle the original deck since it will be re-shuffled every time
         let deck: [Card; DECK_SIZE] = random_deck();
-
-        const MID: usize = DECK_SIZE / 2;
 
         Self {
             p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), MID) },

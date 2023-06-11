@@ -1,6 +1,6 @@
 use std::ptr;
 
-/// Capacity for all CircularBuffers. Capacity MUST be a power of 2 (for fast modulo).
+/// Capacity for all `CircularBuffers`. Capacity MUST be a power of 2 (for fast modulo).
 const CAPACITY: usize = 64;
 
 #[derive(Debug, Clone, Copy)]
@@ -8,6 +8,15 @@ pub struct CircularBuffer<T> {
     head: usize,
     len: usize,
     data: [T; CAPACITY],
+}
+
+/// Inline the instructions for copying bytes for optimization.
+/// https://github.com/rust-lang/rust/issues/97022 ????
+#[inline]
+unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize){
+    for i in 0..count{
+        *dst.add(i) = *src.add(i);
+    }
 }
 
 impl<T: Copy> CircularBuffer<T> {
@@ -62,11 +71,11 @@ impl<T: Copy> CircularBuffer<T> {
         let tail = (self.head + self.len) & (CAPACITY - 1);
         if slice.len() > CAPACITY - tail {
             // We need to split the slice into two parts (unsafe mode)
-            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), CAPACITY - tail);
-            ptr::copy_nonoverlapping(slice.as_ptr().add(CAPACITY - tail), self.data.as_mut_ptr(), slice.len() - (CAPACITY - tail));
+            copy_bytes(slice.as_ptr(), self.data.as_mut_ptr().add(tail), CAPACITY - tail);
+            copy_bytes(slice.as_ptr().add(CAPACITY - tail), self.data.as_mut_ptr(), slice.len() - (CAPACITY - tail));
         } else {
             // We can just copy the slice into the buffer
-            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());
+            copy_bytes(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());
         }
         self.len += slice.len();
     }
