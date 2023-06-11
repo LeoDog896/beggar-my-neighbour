@@ -47,28 +47,28 @@ impl<T: Copy> CircularBuffer<T> {
         self.len += 1;
     }
 
-    pub unsafe fn push_slice(&mut self, slice: &[T]) {
+    pub unsafe fn push_memory(&mut self, head: *const T, len: usize) {
         debug_assert!(
-            self.len + slice.len() <= CAPACITY,
+            self.len + len <= CAPACITY,
             "SliceFifo::push_slice: slice is too long!"
         );
 
         debug_assert!(
-            !slice.is_empty(),
+            len > 0,
             "SliceFifo::push_slice: slice is empty!"
         );
 
         // We use a bitwise operator where N is a power of 2
         let tail = (self.head + self.len) & (CAPACITY - 1);
-        if slice.len() > CAPACITY - tail {
+        if len > CAPACITY - tail {
             // We need to split the slice into two parts (unsafe mode)
-            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), CAPACITY - tail);
-            ptr::copy_nonoverlapping(slice.as_ptr().add(CAPACITY - tail), self.data.as_mut_ptr(), slice.len() - (CAPACITY - tail));
+            ptr::copy_nonoverlapping(head, self.data.as_mut_ptr().add(tail), CAPACITY - tail);
+            ptr::copy_nonoverlapping(head.add(CAPACITY - tail), self.data.as_mut_ptr(), len - (CAPACITY - tail));
         } else {
             // We can just copy the slice into the buffer
-            ptr::copy_nonoverlapping(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());
+            ptr::copy_nonoverlapping(head, self.data.as_mut_ptr().add(tail), len);
         }
-        self.len += slice.len();
+        self.len += len;
     }
 
     /// Skips bounds checking. If the buffer is empty, this will be UB.

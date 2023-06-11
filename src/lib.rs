@@ -116,7 +116,7 @@ impl Game {
         Self {
             p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), MID) },
             p2: unsafe { CircularBuffer::from_memory(deck.as_ptr().add(MID), MID) },
-            middle: CursorSlice::new(),
+            middle: unsafe { CursorSlice::new() },
             penalty: 0,
         }
     }
@@ -142,7 +142,7 @@ impl Game {
         Self {
             p1,
             p2,
-            middle: CursorSlice::new(),
+            middle: unsafe { CursorSlice::new() },
             penalty: 0,
         }
     }
@@ -163,6 +163,8 @@ impl Game {
         // so we can skip some arithmetic
         let mut turns = 1;
         let mut tricks = 0;
+
+        self.middle.init();
 
         // TODO can we make this safe w/o compromising performance?
         let mut current_player: *mut CircularBuffer<Card> = &mut self.p1;
@@ -200,7 +202,7 @@ impl Game {
                     1 => {
                         current_player = self.switch_player(current_player);
 
-                        (*current_player).push_slice(self.middle.slice());
+                        (*current_player).push_memory(self.middle.as_head_ptr(), self.middle.len());
                         self.middle.clear();
 
                         self.penalty = 0;
