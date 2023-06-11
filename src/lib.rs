@@ -92,9 +92,9 @@ pub enum Player {
 #[derive(Clone)]
 pub struct Game {
     /// Player 1's deck, as a queue (we add to the back and remove from the front)
-    p1: CircularBuffer<Card, 64>,
+    p1: CircularBuffer<Card>,
     /// Player 2's deck, as a queue (we add to the back and remove from the front)
-    p2: CircularBuffer<Card, 64>,
+    p2: CircularBuffer<Card>,
     /// The middle pile, as a vec (we only ever add to it)
     middle: CursorSlice<Card, DECK_SIZE>,
     penalty: u8,
@@ -121,7 +121,7 @@ impl Game {
         }
     }
 
-    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card, 64>) -> *mut CircularBuffer<Card, 64> {
+    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card>) -> *mut CircularBuffer<Card> {
         // check if current_player is the same as p1
         if std::ptr::eq(ptr, &self.p1) {
             &mut self.p2
@@ -165,7 +165,7 @@ impl Game {
         let mut tricks = 0;
 
         // TODO can we make this safe w/o compromising performance?
-        let mut current_player: *mut CircularBuffer<Card, 64> = &mut self.p1;
+        let mut current_player: *mut CircularBuffer<Card> = &mut self.p1;
 
         loop {
             unsafe {
