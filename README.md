@@ -70,16 +70,19 @@ This simulation is running on two machines. If you're running this on a server, 
 - @LeoDog896
 - @CoasterFan5
 
-Longest report by @CoasterFan5:
+Longest report by @LeoDog896:
 
 ```
 -------------------
-p1: -K---A--A--------Q--JQ----
-p2: K-Q----J-KJ---JQA--A-K----
-stringified: -K---A--A--------Q--JQ----/K-Q----J-KJ---JQA--A-K----
+restart
+p1: -Q--K--------QQ--JKA---J--
+p2: ------QA-------AKJ-JA--K--
+stringified: -Q--K--------QQ--JKA---J--/------QA-------AKJ-JA--K--
+
+
 winner: P2
-turns: 5287
-tricks: 750
+turns: 5463
+tricks: 776
 -------------------
 ```
 
