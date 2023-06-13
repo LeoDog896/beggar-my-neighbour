@@ -74,15 +74,14 @@ Longest report by @LeoDog896:
 
 ```
 -------------------
-restart
-p1: -Q--K--------QQ--JKA---J--
-p2: ------QA-------AKJ-JA--K--
-stringified: -Q--K--------QQ--JKA---J--/------QA-------AKJ-JA--K--
+p1: --A-QK-A-J----Q----------A
+p2: -------K---J-K-QKJQ---J-A-
+stringified: --A-QK-A-J----Q----------A/-------K---J-K-QKJQ---J-A-
 
 
-winner: P2
-turns: 5463
-tricks: 776
+winner: P1
+turns: 6270
+tricks: 867
 -------------------
 ```
 
