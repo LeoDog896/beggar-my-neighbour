@@ -165,7 +165,7 @@ impl Game {
         let mut turns = 1;
         let mut tricks = 0;
 
-        // TODO can we make this safe w/o compromising performance?
+        // TODO: can we make this safe w/o compromising performance?
         let mut current_player: *mut CircularBuffer<Card> = &mut self.p1;
 
         loop {
