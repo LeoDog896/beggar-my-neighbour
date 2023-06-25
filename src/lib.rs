@@ -122,15 +122,6 @@ impl Game {
         }
     }
 
-    fn switch_player(&mut self, ptr: *mut CircularBuffer<Card>) -> *mut CircularBuffer<Card> {
-        // check if current_player is the same as p1
-        if std::ptr::eq(ptr, &self.p1) {
-            &mut self.p2
-        } else {
-            &mut self.p1
-        }
-    }
-
     pub fn from_string(string: &str) -> Self {
         let split_string: Vec<&str> = string.split('/').collect();
 
@@ -165,8 +156,8 @@ impl Game {
         let mut turns = 1;
         let mut tricks = 0;
 
-        // TODO: can we make this safe w/o compromising performance?
         let mut current_player: *mut CircularBuffer<Card> = &mut self.p1;
+        let mut other_player: *mut CircularBuffer<Card> = &mut self.p2;
 
         loop {
             unsafe {
@@ -190,16 +181,16 @@ impl Game {
                         tricks += 1;
                     }
                     self.penalty = card.penalty();
-                    current_player = self.switch_player(current_player);
+                    std::mem::swap(&mut current_player, &mut other_player);
                     continue;
                 }
 
                 match self.penalty {
-                    0 => current_player = self.switch_player(current_player),
+                    0 => std::mem::swap(&mut current_player, &mut other_player),
                     // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
                     // from the middle and adds them to the beginning of their deck
                     1 => {
-                        current_player = self.switch_player(current_player);
+                        std::mem::swap(&mut current_player, &mut other_player);
 
                         (*current_player).push_slice(self.middle.slice());
                         self.middle.clear();
