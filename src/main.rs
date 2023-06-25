@@ -50,10 +50,7 @@ fn detail(game: &mut Game) -> String {
 
     s.push('\n');
 
-    s.push_str(&format!(
-        "winner: {winner:?}\n",
-        winner = game.winner()
-    ));
+    s.push_str(&format!("winner: {winner:?}\n", winner = game.winner()));
     s.push_str(&format!("turns: {turns}\n", turns = stats.turns));
     s.push_str(&format!("tricks: {tricks}\n", tricks = stats.tricks));
 
@@ -82,7 +79,6 @@ fn random_game(best_length: &AtomicUsize) {
             tricks = stats.tricks,
             header = game_header(&game),
         );
-
     }
 }
 
@@ -107,12 +103,12 @@ fn main() {
         }
         Commands::Longest { games } => {
             let best_length = AtomicUsize::new(0);
-            
+
             if let Some(games) = games {
                 let games_played = AtomicUsize::new(0);
                 rayon::iter::repeat(()).for_each(|_| {
                     random_game(&best_length);
-    
+
                     let games_played = games_played.fetch_add(1, Ordering::Relaxed);
                     if games_played >= games {
                         std::process::exit(0);

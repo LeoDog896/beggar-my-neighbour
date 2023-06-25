@@ -1,11 +1,12 @@
 //! implementation of beggar my neighbour card game
-mod cursorslice;
 mod circlebuffer;
+mod cursorslice;
 
-use cursorslice::CursorSlice;
 use circlebuffer::CircularBuffer;
+use cursorslice::CursorSlice;
 use std::{
-    fmt::{Debug, Display}, ptr
+    fmt::{Debug, Display},
+    ptr,
 };
 
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
@@ -70,7 +71,7 @@ fn random_deck() -> [Card; DECK_SIZE] {
             _ => Card::Other,
         }
     }
-    
+
     for i in (1..deck.len()).rev() {
         unsafe {
             ptr::swap(
@@ -87,7 +88,7 @@ fn random_deck() -> [Card; DECK_SIZE] {
 pub enum Winner {
     P1,
     P2,
-    Infinite
+    Infinite,
 }
 
 #[derive(Clone)]
@@ -163,10 +164,7 @@ impl Game {
             unsafe {
                 // We can return early (len = 1) because regardless of the card played, the game is over
                 if (*current_player).len() == 1 {
-                    break GameStats {
-                        turns,
-                        tricks,
-                    }
+                    break GameStats { turns, tricks };
                 }
 
                 // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
@@ -269,8 +267,20 @@ mod tests {
 
     #[test]
     fn world_record_games() {
-        assert_game("---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---", 8_344, 1_164);
-        assert_game("K-KK----K-A-----JAA--Q--J-/---Q---Q-J-----J------AQ--", 7_157, 1_007);
-        assert_game("A-QK------Q----KA-----J---/-JAK----A--Q----J---QJ--K-", 6_913, 960)
+        assert_game(
+            "---AJ--Q---------QAKQJJ-QK/-----A----KJ-K--------A---",
+            8_344,
+            1_164,
+        );
+        assert_game(
+            "K-KK----K-A-----JAA--Q--J-/---Q---Q-J-----J------AQ--",
+            7_157,
+            1_007,
+        );
+        assert_game(
+            "A-QK------Q----KA-----J---/-JAK----A--Q----J---QJ--K-",
+            6_913,
+            960,
+        )
     }
 }

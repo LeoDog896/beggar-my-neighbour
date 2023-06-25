@@ -13,8 +13,8 @@ pub struct CircularBuffer<T> {
 /// Inline the instructions for copying bytes for optimization.
 /// https://github.com/rust-lang/rust/issues/97022 ????
 #[inline]
-unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize){
-    for i in 0..count{
+unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize) {
+    for i in 0..count {
         *dst.add(i) = *src.add(i);
     }
 }
@@ -32,17 +32,10 @@ impl<T: Copy> CircularBuffer<T> {
     ///
     /// It does not make any assumptions in production about the length of the slice.
     pub unsafe fn from_memory(source: *const T, len: usize) -> Self {
-        debug_assert!(
-            len <= CAPACITY,
-            "SliceFifo::from_slice: slice is too long!"
-        );
+        debug_assert!(len <= CAPACITY, "SliceFifo::from_slice: slice is too long!");
         let mut data = [std::mem::zeroed(); CAPACITY];
         ptr::copy_nonoverlapping(source, data.as_mut_ptr(), len);
-        Self {
-            head: 0,
-            len,
-            data,
-        }
+        Self { head: 0, len, data }
     }
 
     pub unsafe fn push(&mut self, item: T) {
@@ -62,20 +55,29 @@ impl<T: Copy> CircularBuffer<T> {
             "SliceFifo::push_slice: slice is too long!"
         );
 
-        debug_assert!(
-            !slice.is_empty(),
-            "SliceFifo::push_slice: slice is empty!"
-        );
+        debug_assert!(!slice.is_empty(), "SliceFifo::push_slice: slice is empty!");
 
         // We use a bitwise operator where N is a power of 2
         let tail = (self.head + self.len) & (CAPACITY - 1);
         if slice.len() > CAPACITY - tail {
             // We need to split the slice into two parts (unsafe mode)
-            copy_bytes(slice.as_ptr(), self.data.as_mut_ptr().add(tail), CAPACITY - tail);
-            copy_bytes(slice.as_ptr().add(CAPACITY - tail), self.data.as_mut_ptr(), slice.len() - (CAPACITY - tail));
+            copy_bytes(
+                slice.as_ptr(),
+                self.data.as_mut_ptr().add(tail),
+                CAPACITY - tail,
+            );
+            copy_bytes(
+                slice.as_ptr().add(CAPACITY - tail),
+                self.data.as_mut_ptr(),
+                slice.len() - (CAPACITY - tail),
+            );
         } else {
             // We can just copy the slice into the buffer
-            copy_bytes(slice.as_ptr(), self.data.as_mut_ptr().add(tail), slice.len());
+            copy_bytes(
+                slice.as_ptr(),
+                self.data.as_mut_ptr().add(tail),
+                slice.len(),
+            );
         }
         self.len += slice.len();
     }
