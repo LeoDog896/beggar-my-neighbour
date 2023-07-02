@@ -1,7 +1,6 @@
 use beggar_my_neighbour::Game;
 use clap::{Parser, Subcommand};
 use indoc::printdoc;
-use rayon::prelude::ParallelIterator;
 use std::{
     fmt::Debug,
     sync::atomic::{AtomicUsize, Ordering},
@@ -101,21 +100,31 @@ fn main() {
             println!("{}", game_header(game));
             println!("{}", detail(game));
         }
-        Commands::Longest { games } => {
-            let best_length = AtomicUsize::new(0);
+        Commands::Longest { games: total_games } => {
+            static BEST_LENGTH: AtomicUsize = AtomicUsize::new(0);
+            static GAMES: AtomicUsize = AtomicUsize::new(0);
 
-            if let Some(games) = games {
-                let games_played = AtomicUsize::new(0);
-                rayon::iter::repeat(()).for_each(|_| {
-                    random_game(&best_length);
+            let threads = std::thread::available_parallelism().unwrap();
 
-                    let games_played = games_played.fetch_add(1, Ordering::Relaxed);
-                    if games_played >= games {
-                        std::process::exit(0);
-                    }
-                });
-            } else {
-                rayon::iter::repeat(()).for_each(|_| random_game(&best_length));
+            let mut handles: Vec<_> = (0..threads.into())
+                .map(|_| {
+                    std::thread::spawn(move || {
+                        loop {
+                            random_game(&BEST_LENGTH);
+                            let games = GAMES.fetch_add(1, Ordering::Relaxed);
+
+                            if let Some(total_games) = total_games {
+                                if games >= total_games {
+                                    std::process::exit(0);
+                                }
+                            }
+                        }
+                    })
+                })
+                .collect();
+
+            for handle in handles.drain(..) {
+                handle.join().unwrap();
             }
         }
     }

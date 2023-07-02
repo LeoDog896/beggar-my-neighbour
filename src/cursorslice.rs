@@ -4,7 +4,7 @@ use std::mem::MaybeUninit;
 /// It is a slice that has a cursor that navigates around, which only supports push and clear.
 #[derive(Debug, Clone, Copy)]
 pub struct CursorSlice<T: Copy, const N: usize> {
-    data: [MaybeUninit<T>; N],
+    data: [T; N],
     cursor: usize,
 }
 
@@ -19,14 +19,12 @@ impl<T: Copy, const N: usize> CursorSlice<T, N> {
     /// This is fully unsafe! We are assuming that the cursor is always in bounds in release mode.
     pub unsafe fn push_unchecked(&mut self, value: T) {
         debug_assert!(self.cursor < N, "CursorSlice is full!");
-        let ptr = self.data.get_unchecked_mut(self.cursor) as *mut MaybeUninit<T> as *mut T;
-        ptr.write(value);
+        *self.data.get_unchecked_mut(self.cursor) = value;
         self.cursor += 1;
     }
 
     pub fn slice(&self) -> &[T] {
-        let slice = &self.data[..self.cursor];
-        unsafe { &*(slice as *const [MaybeUninit<T>] as *const [T]) }
+        &self.data[..self.cursor]
     }
 
     pub fn clear(&mut self) {

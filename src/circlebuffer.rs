@@ -1,4 +1,4 @@
-use std::ptr;
+use std::mem::MaybeUninit;
 
 /// Capacity for all `CircularBuffers`. Capacity MUST be a power of 2 (for fast modulo).
 const CAPACITY: usize = 64;
@@ -24,7 +24,7 @@ impl<T: Copy> CircularBuffer<T> {
         Self {
             head: 0,
             len: 0,
-            data: [unsafe { std::mem::zeroed() }; CAPACITY],
+            data: unsafe { MaybeUninit::uninit().assume_init() },
         }
     }
 
@@ -34,7 +34,7 @@ impl<T: Copy> CircularBuffer<T> {
     pub unsafe fn from_memory(source: *const T, len: usize) -> Self {
         debug_assert!(len <= CAPACITY, "SliceFifo::from_slice: slice is too long!");
         let mut data = [std::mem::zeroed(); CAPACITY];
-        ptr::copy_nonoverlapping(source, data.as_mut_ptr(), len);
+        copy_bytes(source, data.as_mut_ptr(), len);
         Self { head: 0, len, data }
     }
 
