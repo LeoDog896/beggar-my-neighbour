@@ -1,6 +1,9 @@
 use std::mem::MaybeUninit;
 
-/// Capacity for all `CircularBuffers`. Capacity MUST be a power of 2 (for fast modulo).
+/// Capacity for all `CircularBuffers`. 
+/// This size satisfies the following restrictions:
+/// - Capacity MUST be a power of 2 (for fast modulo).
+/// - Capacity should be >= the size of the deck (52 cards).
 const CAPACITY: usize = 64;
 
 #[derive(Debug, Clone, Copy)]
@@ -46,7 +49,7 @@ impl<T: Copy> CircularBuffer<T> {
             CAPACITY
         );
 
-        // We use a bitwise operator where N is a power of 2
+        // We use a bitwise operator where N is a power of 2 instead of modulo
         let tail = (self.head + self.len) & (CAPACITY - 1);
 
         // This is safe because we know that the length of the slice is less than N (because of % N)
@@ -64,7 +67,7 @@ impl<T: Copy> CircularBuffer<T> {
 
         debug_assert!(!slice.is_empty(), "SliceFifo::push_slice: slice is empty!");
 
-        // We use a bitwise operator where N is a power of 2
+        // We use a bitwise operator where N is a power of 2 instead of modulo
         let tail = (self.head + self.len) & (CAPACITY - 1);
         if slice.len() > CAPACITY - tail {
             // We need to split the slice into two parts
