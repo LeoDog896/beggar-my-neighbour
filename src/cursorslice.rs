@@ -24,7 +24,7 @@ impl<T: Copy, const N: usize> CursorSlice<T, N> {
     }
 
     pub fn slice(&self) -> &[T] {
-        &self.data[..self.cursor]
+        unsafe { std::slice::from_raw_parts(self.data.as_ptr(), self.cursor) }
     }
 
     pub fn clear(&mut self) {

@@ -12,7 +12,7 @@ use std::{
 /// Card is an enum representing 5 different types of cards that are used in beggar my neighbour
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
 #[repr(u8)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum Card {
     /// Penalty card, play 4
     Ace = 4,
@@ -140,6 +140,7 @@ impl Game {
         }
     }
 
+    #[must_use]
     pub const fn winner(&self) -> Winner {
         if self.p1.len() == 1 {
             Winner::P2
@@ -157,8 +158,8 @@ impl Game {
         let mut turns = 1;
         let mut tricks = 0;
 
-        let mut current_player: *mut CircularBuffer<Card> = &mut self.p1;
-        let mut other_player: *mut CircularBuffer<Card> = &mut self.p2;
+        let mut current_player = &mut self.p1;
+        let mut other_player = &mut self.p2;
 
         loop {
             unsafe {
@@ -173,8 +174,23 @@ impl Game {
                 self.middle.push_unchecked(card);
                 turns += 1;
 
-                // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
-                if card.penalty() > 0 {
+                if card == Card::Other {
+                    match self.penalty {
+                        0 => std::mem::swap(&mut current_player, &mut other_player),
+                        // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
+                        // from the middle and adds them to the beginning of their deck
+                        1 => {
+                            std::mem::swap(&mut current_player, &mut other_player);
+    
+                            (*current_player).push_slice(self.middle.slice());
+                            self.middle.clear();
+    
+                            self.penalty = 0;
+                        }
+                        _ => self.penalty -= 1,
+                    };   
+                } else {
+                    // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
                     if self.penalty == 0 {
                         tricks += 1;
                     }
@@ -182,21 +198,6 @@ impl Game {
                     std::mem::swap(&mut current_player, &mut other_player);
                     continue;
                 }
-
-                match self.penalty {
-                    0 => std::mem::swap(&mut current_player, &mut other_player),
-                    // If the penalty is 1 and the player hasn't played a penalty card, the other player takes all the cards
-                    // from the middle and adds them to the beginning of their deck
-                    1 => {
-                        std::mem::swap(&mut current_player, &mut other_player);
-
-                        (*current_player).push_slice(self.middle.slice());
-                        self.middle.clear();
-
-                        self.penalty = 0;
-                    }
-                    _ => self.penalty -= 1,
-                };
             }
             if turns > 100_000 {
                 break GameStats { turns, tricks };

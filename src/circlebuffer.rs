@@ -11,7 +11,7 @@ pub struct CircularBuffer<T> {
 }
 
 /// Inline the instructions for copying bytes for optimization.
-/// https://github.com/rust-lang/rust/issues/97022 ????
+/// <https://github.com/rust-lang/rust/issues/97022> ????
 #[inline]
 unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize) {
     for i in 0..count {
@@ -39,6 +39,13 @@ impl<T: Copy> CircularBuffer<T> {
     }
 
     pub unsafe fn push(&mut self, item: T) {
+        debug_assert!(
+            self.len < CAPACITY,
+            "SliceFifo::push: slice is full! (len = {}, CAPACITY = {})",
+            self.len,
+            CAPACITY
+        );
+
         // We use a bitwise operator where N is a power of 2
         let tail = (self.head + self.len) & (CAPACITY - 1);
 
@@ -60,7 +67,7 @@ impl<T: Copy> CircularBuffer<T> {
         // We use a bitwise operator where N is a power of 2
         let tail = (self.head + self.len) & (CAPACITY - 1);
         if slice.len() > CAPACITY - tail {
-            // We need to split the slice into two parts (unsafe mode)
+            // We need to split the slice into two parts
             copy_bytes(
                 slice.as_ptr(),
                 self.data.as_mut_ptr().add(tail),
@@ -84,6 +91,7 @@ impl<T: Copy> CircularBuffer<T> {
 
     /// Skips bounds checking. If the buffer is empty, this will be UB.
     pub unsafe fn pop_unchecked(&mut self) -> T {
+        debug_assert!(self.len > 0, "SliceFifo::pop_unchecked: slice is empty!");
         let item = self.data.get_unchecked(self.head);
         if self.head == CAPACITY - 1 {
             self.head = 0;
