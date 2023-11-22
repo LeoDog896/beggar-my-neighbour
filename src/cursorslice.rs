@@ -9,7 +9,7 @@ pub struct CursorSlice<T: Copy, const N: usize> {
 }
 
 impl<T: Copy, const N: usize> CursorSlice<T, N> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             data: unsafe { MaybeUninit::uninit().assume_init() },
             cursor: 0,
@@ -23,7 +23,7 @@ impl<T: Copy, const N: usize> CursorSlice<T, N> {
         self.cursor += 1;
     }
 
-    pub fn slice(&self) -> &[T] {
+    pub const fn slice(&self) -> &[T] {
         unsafe { std::slice::from_raw_parts(self.data.as_ptr(), self.cursor) }
     }
 

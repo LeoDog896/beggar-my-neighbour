@@ -23,7 +23,7 @@ unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize) {
 }
 
 impl<T: Copy> CircularBuffer<T> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             head: 0,
             len: 0,

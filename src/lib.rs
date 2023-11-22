@@ -109,6 +109,7 @@ pub struct GameStats {
 }
 
 impl Game {
+    #[must_use]
     pub fn random() -> Self {
         const MID: usize = DECK_SIZE / 2;
 
