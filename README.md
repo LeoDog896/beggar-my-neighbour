@@ -12,6 +12,10 @@ The general rules of the game can be found in [wikipedia](https://en.wikipedia.o
 RUSTFLAGS="--emit=asm -C target-cpu=native" cargo run --release -- longest
 ```
 
+## GPU support
+
+GPU support is **not implemented**; this is because the servers I run it on only have CPUs. PRs are welcome :)
+
 ## Game implementation
 
 Despite beggar my neighbour using a 52 card deck, we can represent it as 5 different distinct card types:
