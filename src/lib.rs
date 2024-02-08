@@ -182,14 +182,14 @@ impl Game {
                         // from the middle and adds them to the beginning of their deck
                         1 => {
                             std::mem::swap(&mut current_player, &mut other_player);
-    
+
                             (*current_player).push_slice(self.middle.slice());
                             self.middle.clear();
-    
+
                             self.penalty = 0;
                         }
                         _ => self.penalty -= 1,
-                    };   
+                    };
                 } else {
                     // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
                     if self.penalty == 0 {

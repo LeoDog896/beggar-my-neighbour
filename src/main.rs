@@ -18,13 +18,16 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    /// Plays a random deck
     Random,
+    /// Plays a specific deck
     Deck {
         /// The deck to use
         deck: String,
     },
     /// Prints the stats for the longest game
     Record,
+    /// Attempts to find a long game
     Longest {
         /// How many games to play
         /// Don't specify if you want to play forever
@@ -108,15 +111,13 @@ fn main() {
 
             let mut handles: Vec<_> = (0..threads.into())
                 .map(|_| {
-                    std::thread::spawn(move || {
-                        loop {
-                            random_game(&BEST_LENGTH);
-                            let games = GAMES.fetch_add(1, Ordering::Relaxed);
+                    std::thread::spawn(move || loop {
+                        random_game(&BEST_LENGTH);
+                        let games = GAMES.fetch_add(1, Ordering::Relaxed);
 
-                            if let Some(total_games) = total_games {
-                                if games >= total_games {
-                                    std::process::exit(0);
-                                }
+                        if let Some(total_games) = total_games {
+                            if games >= total_games {
+                                std::process::exit(0);
                             }
                         }
                     })

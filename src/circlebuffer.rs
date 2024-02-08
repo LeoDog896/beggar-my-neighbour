@@ -1,25 +1,18 @@
-use std::mem::MaybeUninit;
+use std::{mem::MaybeUninit, ptr::copy_nonoverlapping};
 
-/// Capacity for all `CircularBuffers`. 
+/// Capacity for all `CircularBuffers`.
 /// This size satisfies the following restrictions:
 /// - Capacity MUST be a power of 2 (for fast modulo).
 /// - Capacity should be >= the size of the deck (52 cards).
 const CAPACITY: usize = 64;
 
+// TODO: optimize by virtual memory
+/// A circular buffer.
 #[derive(Debug, Clone, Copy)]
 pub struct CircularBuffer<T> {
     head: usize,
     len: usize,
     data: [T; CAPACITY],
-}
-
-/// Inline the instructions for copying bytes for optimization.
-/// <https://github.com/rust-lang/rust/issues/97022> ????
-#[inline]
-unsafe fn copy_bytes<T: Copy>(src: *const T, dst: *mut T, count: usize) {
-    for i in 0..count {
-        *dst.add(i) = *src.add(i);
-    }
 }
 
 impl<T: Copy> CircularBuffer<T> {
@@ -37,7 +30,7 @@ impl<T: Copy> CircularBuffer<T> {
     pub unsafe fn from_memory(source: *const T, len: usize) -> Self {
         debug_assert!(len <= CAPACITY, "SliceFifo::from_slice: slice is too long!");
         let mut data = [std::mem::zeroed(); CAPACITY];
-        copy_bytes(source, data.as_mut_ptr(), len);
+        copy_nonoverlapping(source, data.as_mut_ptr(), len);
         Self { head: 0, len, data }
     }
 
@@ -71,19 +64,19 @@ impl<T: Copy> CircularBuffer<T> {
         let tail = (self.head + self.len) & (CAPACITY - 1);
         if slice.len() > CAPACITY - tail {
             // We need to split the slice into two parts
-            copy_bytes(
+            copy_nonoverlapping(
                 slice.as_ptr(),
                 self.data.as_mut_ptr().add(tail),
                 CAPACITY - tail,
             );
-            copy_bytes(
+            copy_nonoverlapping(
                 slice.as_ptr().add(CAPACITY - tail),
                 self.data.as_mut_ptr(),
                 slice.len() - (CAPACITY - tail),
             );
         } else {
             // We can just copy the slice into the buffer
-            copy_bytes(
+            copy_nonoverlapping(
                 slice.as_ptr(),
                 self.data.as_mut_ptr().add(tail),
                 slice.len(),
