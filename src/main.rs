@@ -112,6 +112,7 @@ fn main() {
             let mut handles: Vec<_> = (0..threads.into())
                 .map(|_| {
                     std::thread::spawn(move || loop {
+                        // TODO: attempt to avoid extra array initialization by using prev arr
                         random_game(&BEST_LENGTH);
                         let games = GAMES.fetch_add(1, Ordering::Relaxed);
 
