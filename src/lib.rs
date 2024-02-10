@@ -13,7 +13,7 @@ use std::{
 /// There are 4 of each (Ace, King, Queen, Jack) and 36 other cards
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Card {
+pub enum Card {
     /// Penalty card, play 4
     Ace = 4,
     /// Penalty card, play 3
@@ -57,9 +57,9 @@ impl Display for Card {
     }
 }
 
-const DECK_SIZE: usize = 52;
+pub const DECK_SIZE: usize = 52;
 
-fn random_deck() -> [Card; DECK_SIZE] {
+pub fn new_deck() -> [Card; DECK_SIZE] {
     let mut deck = [Card::Other; DECK_SIZE];
 
     for (i, card) in deck.iter_mut().enumerate() {
@@ -72,6 +72,10 @@ fn random_deck() -> [Card; DECK_SIZE] {
         }
     }
 
+    deck
+}
+
+fn randomize_deck(deck: &mut [Card; DECK_SIZE]) {
     for i in (1..deck.len()).rev() {
         unsafe {
             ptr::swap(
@@ -80,8 +84,6 @@ fn random_deck() -> [Card; DECK_SIZE] {
             );
         }
     }
-
-    deck
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -110,11 +112,11 @@ pub struct GameStats {
 
 impl Game {
     #[must_use]
-    pub fn random() -> Self {
+    pub fn random(deck: &mut [Card; DECK_SIZE]) -> Self {
         const MID: usize = DECK_SIZE / 2;
 
         // We can just shuffle the original deck since it will be re-shuffled every time
-        let deck: [Card; DECK_SIZE] = random_deck();
+        randomize_deck(deck);
 
         Self {
             p1: unsafe { CircularBuffer::from_memory(deck.as_ptr(), MID) },

@@ -1,4 +1,4 @@
-use beggar_my_neighbour::Game;
+use beggar_my_neighbour::{new_deck, Card, Game, DECK_SIZE};
 use clap::{Parser, Subcommand};
 use indoc::printdoc;
 use std::{
@@ -59,8 +59,8 @@ fn detail(game: &mut Game) -> String {
     s
 }
 
-fn random_game(best_length: &AtomicUsize) {
-    let game = Game::random();
+fn random_game(best_length: &AtomicUsize, deck: &mut [Card; DECK_SIZE]) {
+    let game = Game::random(deck);
     let mut playable_game = game.clone();
     let stats = playable_game.play();
 
@@ -88,7 +88,7 @@ fn main() {
     let args = Args::parse();
     match args.command {
         Commands::Random => {
-            let mut game = Game::random();
+            let mut game = Game::random(&mut new_deck());
             println!("{}", game_header(&game));
             println!("{}", detail(&mut game));
         }
@@ -111,14 +111,17 @@ fn main() {
 
             let mut handles: Vec<_> = (0..threads.into())
                 .map(|_| {
-                    std::thread::spawn(move || loop {
-                        // TODO: attempt to avoid extra array initialization by using prev arr
-                        random_game(&BEST_LENGTH);
-                        let games = GAMES.fetch_add(1, Ordering::Relaxed);
+                    std::thread::spawn(move || {
+                        let mut deck = new_deck();
+                        loop {
+                            // TODO: attempt to avoid extra array initialization by using prev arr
+                            random_game(&BEST_LENGTH, &mut deck);
+                            let games = GAMES.fetch_add(1, Ordering::Relaxed);
 
-                        if let Some(total_games) = total_games {
-                            if games >= total_games {
-                                std::process::exit(0);
+                            if let Some(total_games) = total_games {
+                                if games >= total_games {
+                                    std::process::exit(0);
+                                }
                             }
                         }
                     })
