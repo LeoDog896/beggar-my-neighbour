@@ -171,7 +171,7 @@ impl Game {
                     break GameStats { turns, tricks };
                 }
 
-                // have the player play a card. we can safely pop here because we know the player has cards (otherwise the game would be over)
+                // we can safely pop here because we know the player has cards (otherwise the game would be over)
                 // *unless current_player.len() == 0, which is impossible we only remove 1 card at a time
                 let card = (*current_player).pop_unchecked();
                 self.middle.push_unchecked(card);
@@ -189,21 +189,22 @@ impl Game {
                             self.middle.clear();
 
                             self.penalty = 0;
+                            if turns > 100_000 {
+                                break GameStats { turns, tricks };
+                            }
                         }
                         _ => self.penalty -= 1,
                     };
                 } else {
-                    // regardless if the game currently has penalty, if the player plays a penalty card, the penalty is set and the other player must play
+                    // regardless if the game currently has penalty,
+                    // if the player plays a penalty card,
+                    // the penalty is set and the other player must play
                     if self.penalty == 0 {
                         tricks += 1;
                     }
                     self.penalty = card.penalty();
                     std::mem::swap(&mut current_player, &mut other_player);
-                    continue;
                 }
-            }
-            if turns > 100_000 {
-                break GameStats { turns, tricks };
             }
         }
     }
