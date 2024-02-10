@@ -11,5 +11,5 @@ indoc = "2.0.1"
 [profile.release]
 lto = "fat"
 codegen-units = 1
-opt-level = "z"
+opt-level = "s"
 panic = "abort"

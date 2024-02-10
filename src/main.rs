@@ -114,7 +114,6 @@ fn main() {
                     std::thread::spawn(move || {
                         let mut deck = new_deck();
                         loop {
-                            // TODO: attempt to avoid extra array initialization by using prev arr
                             random_game(&BEST_LENGTH, &mut deck);
                             let games = GAMES.fetch_add(1, Ordering::Relaxed);
 
